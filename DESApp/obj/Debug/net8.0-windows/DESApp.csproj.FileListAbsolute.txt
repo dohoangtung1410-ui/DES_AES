@@ -1,0 +1,14 @@
+E:\CODE\Csharp\DESApp\bin\Debug\net8.0-windows\DESApp.exe
+E:\CODE\Csharp\DESApp\bin\Debug\net8.0-windows\DESApp.deps.json
+E:\CODE\Csharp\DESApp\bin\Debug\net8.0-windows\DESApp.runtimeconfig.json
+E:\CODE\Csharp\DESApp\bin\Debug\net8.0-windows\DESApp.dll
+E:\CODE\Csharp\DESApp\bin\Debug\net8.0-windows\DESApp.pdb
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.GeneratedMSBuildEditorConfig.editorconfig
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.AssemblyInfoInputs.cache
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.AssemblyInfo.cs
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.csproj.CoreCompileInputs.cache
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.dll
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\refint\DESApp.dll
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.pdb
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\DESApp.genruntimeconfig.cache
+E:\CODE\Csharp\DESApp\obj\Debug\net8.0-windows\ref\DESApp.dll
