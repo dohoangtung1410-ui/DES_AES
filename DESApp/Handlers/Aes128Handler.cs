@@ -3,6 +3,7 @@ using System.Text;
 using System.Security.Cryptography;
 using System.Linq;
 using System.Collections.Generic;
+using DESApp.Data;
 
 namespace DESApp.Handlers
 {
@@ -142,6 +143,8 @@ namespace DESApp.Handlers
 
                 processSb.AppendLine($"✅ Mã đoạn {segmentIndex + 1}: {BitConverter.ToString(encryptedSegment).Replace("-", " ")}");
                 processSb.AppendLine();
+
+
             }
 
             var endTime = DateTime.Now;
@@ -158,6 +161,19 @@ namespace DESApp.Handlers
             }
             processSb.AppendLine($"Bản mã hoá: {BitConverter.ToString(encryptedResult).Replace("-", " ")}");
             processSb.AppendLine();
+
+            var record = new BenchmarkRecord
+            {
+                Algorithm = this.AlgorithmName,  // Sử dụng thuộc tính AlgorithmName
+                Operation = "Encrypt",
+                KeySize = key.Length,
+                DataSize = plaintext.Length,
+                TimeMs = duration,  // Sử dụng duration đã tính
+                Timestamp = DateTime.Now
+            };
+
+            // Đảm bảo đã thêm using DESApp.Data; ở đầu file
+            BenchmarkDatabase.Insert(record);
 
             processSb.AppendLine("=== KẾT THÚC MÃ HÓA AES-128 ===");
             processSb.AppendLine($"⏱ Encryption completed in {duration}ms");
@@ -209,12 +225,23 @@ namespace DESApp.Handlers
             var endTime = DateTime.Now;
             var duration = (endTime - startTime).TotalMilliseconds;
 
+            BenchmarkDatabase.Insert(new BenchmarkRecord
+            {
+                Algorithm = "AES-128",
+                Operation = "Encrypt",
+                KeySize = 128,
+                DataSize = ciphertext.Length,
+                TimeMs = duration,
+                Timestamp = DateTime.Now
+            });
+
             processSb.AppendLine("=== KẾT THÚC GIẢI MÃ AES-128 ===");
             processSb.AppendLine($"⏱ Decryption completed in {duration}ms");
             processSb.AppendLine();
             processSb.AppendLine($"→ Plaintext: {Encoding.UTF8.GetString(decryptedData)}");
 
             return decryptedData;
+
         }
 
         private List<byte[]> PreprocessPlaintext(byte[] plaintext, StringBuilder sb, Encoding encoder)
@@ -423,7 +450,7 @@ namespace DESApp.Handlers
                         TryMultipleEncodings(result, processSb);
                     }
 
-                    
+
 
                     processSb.AppendLine();
 
@@ -443,20 +470,20 @@ namespace DESApp.Handlers
 
             // Danh sách các encoding cần thử với kiểm tra an toàn
             var encodings = new List<(string Name, Encoding Encoding)>();
-            
+
             // Các encoding luôn khả dụng
             encodings.Add(("UTF-8", Encoding.UTF8));
             encodings.Add(("ASCII", Encoding.ASCII));
             encodings.Add(("Unicode (UTF-16LE)", Encoding.Unicode));
             encodings.Add(("UTF-32", Encoding.UTF32));
-            
+
             // Thử thêm các encoding khác nếu khả dụng
             try
             {
                 encodings.Add(("Windows-1252", Encoding.GetEncoding(1252)));
             }
             catch { /* Không khả dụng */ }
-            
+
             try
             {
                 encodings.Add(("ISO-8859-1", Encoding.GetEncoding(28591)));

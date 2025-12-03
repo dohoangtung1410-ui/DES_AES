@@ -1,0 +1,2995 @@
+====================Tiền xử bản rõ================
+Bản rõ chia làm các đoạn sau:
+Đoạn 1: Ninh Công Tú
+@12
+H_đoạn 1: 27 08 0D 07 E0 1C C0 0D 06 E0 2D 66 E1 E4 D7 D8
+Đoạn 2: 3xxxxxxxxxxxxxxx
+H_đoạn 2: D9 78 78 78 78 78 78 78 78 78 78 78 78 78 78 78
+
+====================Tiền xử khoá================
+Khoá ban đầu: khoacntt HN
+Độ dài: 11 ký tự = 11 byte
+⚡ XỬ LÝ: AES-128 cần 16 byte
+   ⚠ Khóa ngắn hơn → đệm thêm 5 byte 'x'
+Khoá sau khi đệm 'x': khoacntt HNxxxxx
+Khoá hex: 6B 68 6F 61 63 6E 74 74 20 48 4E 78 78 78 78 78
+
+--- Mở rộng khóa (KeyExpansion) ---
+====================Quá trình sinh khoá================
+
+--- KHÓA VÒNG 0 ---
+Từ w[0] đến w[3]:
+  w[0] = 6B686F61
+  w[1] = 636E7474
+  w[2] = 20484E78
+  w[3] = 78787878
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ 6B 63 20 78 ║
+║ 68 6E 48 78 ║
+║ 6F 74 4E 78 ║
+║ 61 74 78 78 ║
+╚════════════════════════╝
+
+
+BƯỚC 2: TÍNH TOÁN 40 TỪ TIẾP THEO THEO TỪNG KHÓA VÒNG
+--- KHÓA VÒNG 1 ---
+Tính toán w[4] đến w[7]:
+--- Tính w[4] (j=4) ---
+  → j=4 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[4] = trans(w[3]) XOR w[0]
+
++ Tính trans(w[3]):
+  Bước 1: Lấy giá trị w[3] từ vòng trước
+    w[3] = 78787878
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[3]
+    Input: 78787878
+    Output: 78787878 (sau khi xoay)
+    RotWord(78787878) = 78787878
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 78787878
+    Tra S-Box: 78→BC, 78→BC, 78→BC, 78→BC
+    Output: BCBCBCBC
+    SubWord(78787878) = BCBCBCBC
+  Bước 4: Lấy hằng số Rcon cho round 1
+    Rcon[1] = 01000000
+  Bước 5: Tính trans(w[3]) = SubWord XOR Rcon
+    Input 1: BCBCBCBC (SubWord)
+    Input 2: 01000000 (Rcon[1])
+    Thực hiện XOR: BC⊕01=BD, BC⊕00=BC, BC⊕00=BC, BC⊕00=BC
+    ==>> trans(w[3]) = BDBCBCBC
+
++ Tính w[4] = trans(w[3]) XOR w[0]:
+  Bước 6: Lấy giá trị w[0] từ khóa ban đầu
+    w[0] = 6B686F61
+  Bước 7: Thực hiện XOR
+    trans(w[3]) = BDBCBCBC
+    w[0] = 6B686F61
+    Thực hiện XOR: BD⊕6B=D6, BC⊕68=D4, BC⊕6F=D3, BC⊕61=DD
+    ==>> w[4] = D6D4D3DD
+
+--- Tính w[5] (j=5) ---
+  → j=5 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[5] = w[4] XOR w[1]
+
++ Tính w[5] = w[4] XOR w[1]:
+  Bước 1: Lấy giá trị w[4] vừa tính được
+    w[4] = D6D4D3DD
+  Bước 2: Lấy giá trị w[1] từ khóa ban đầu
+    w[1] = 636E7474
+  Bước 3: Thực hiện XOR
+    w[4] = D6D4D3DD
+    w[1] = 636E7474
+    Thực hiện XOR: D6⊕63=B5, D4⊕6E=BA, D3⊕74=A7, DD⊕74=A9
+    ==>> w[5] = B5BAA7A9
+
+--- Tính w[6] (j=6) ---
+  → j=6 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[6] = w[5] XOR w[2]
+
++ Tính w[6] = w[5] XOR w[2]:
+  Bước 1: Lấy giá trị w[5] vừa tính được
+    w[5] = B5BAA7A9
+  Bước 2: Lấy giá trị w[2] từ khóa ban đầu
+    w[2] = 20484E78
+  Bước 3: Thực hiện XOR
+    w[5] = B5BAA7A9
+    w[2] = 20484E78
+    Thực hiện XOR: B5⊕20=95, BA⊕48=F2, A7⊕4E=E9, A9⊕78=D1
+    ==>> w[6] = 95F2E9D1
+
+--- Tính w[7] (j=7) ---
+  → j=7 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[7] = w[6] XOR w[3]
+
++ Tính w[7] = w[6] XOR w[3]:
+  Bước 1: Lấy giá trị w[6] vừa tính được
+    w[6] = 95F2E9D1
+  Bước 2: Lấy giá trị w[3] từ khóa ban đầu
+    w[3] = 78787878
+  Bước 3: Thực hiện XOR
+    w[6] = 95F2E9D1
+    w[3] = 78787878
+    Thực hiện XOR: 95⊕78=ED, F2⊕78=8A, E9⊕78=91, D1⊕78=A9
+    ==>> w[7] = ED8A91A9
+
+--- KẾT QUẢ KHÓA VÒNG 1 ---
+Từ w[4] đến w[7]:
+  w[4] = D6D4D3DD
+  w[5] = B5BAA7A9
+  w[6] = 95F2E9D1
+  w[7] = ED8A91A9
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ D6 B5 95 ED ║
+║ D4 BA F2 8A ║
+║ D3 A7 E9 91 ║
+║ DD A9 D1 A9 ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 2 ---
+Tính toán w[8] đến w[11]:
+--- Tính w[8] (j=8) ---
+  → j=8 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[8] = trans(w[7]) XOR w[4]
+
++ Tính trans(w[7]):
+  Bước 1: Lấy giá trị w[7] từ vòng trước
+    w[7] = ED8A91A9
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[7]
+    Input: ED8A91A9
+    Output: 8AEDA991 (sau khi xoay)
+    RotWord(ED8A91A9) = 8AEDA991
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 8AEDA991
+    Tra S-Box: 8A→7E, ED→55, A9→D3, 91→81
+    Output: 7E55D381
+    SubWord(8AEDA991) = 7E55D381
+  Bước 4: Lấy hằng số Rcon cho round 2
+    Rcon[2] = 02000000
+  Bước 5: Tính trans(w[7]) = SubWord XOR Rcon
+    Input 1: 7E55D381 (SubWord)
+    Input 2: 02000000 (Rcon[2])
+    Thực hiện XOR: 7E⊕02=7C, 55⊕00=55, D3⊕00=D3, 81⊕00=81
+    ==>> trans(w[7]) = 7C55D381
+
++ Tính w[8] = trans(w[7]) XOR w[4]:
+  Bước 6: Lấy giá trị w[4] từ khóa ban đầu
+    w[4] = D6D4D3DD
+  Bước 7: Thực hiện XOR
+    trans(w[7]) = 7C55D381
+    w[4] = D6D4D3DD
+    Thực hiện XOR: 7C⊕D6=AA, 55⊕D4=81, D3⊕D3=00, 81⊕DD=5C
+    ==>> w[8] = AA81005C
+
+--- Tính w[9] (j=9) ---
+  → j=9 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[9] = w[8] XOR w[5]
+
++ Tính w[9] = w[8] XOR w[5]:
+  Bước 1: Lấy giá trị w[8] vừa tính được
+    w[8] = AA81005C
+  Bước 2: Lấy giá trị w[5] từ khóa ban đầu
+    w[5] = B5BAA7A9
+  Bước 3: Thực hiện XOR
+    w[8] = AA81005C
+    w[5] = B5BAA7A9
+    Thực hiện XOR: AA⊕B5=1F, 81⊕BA=3B, 00⊕A7=A7, 5C⊕A9=F5
+    ==>> w[9] = 1F3BA7F5
+
+--- Tính w[10] (j=10) ---
+  → j=10 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[10] = w[9] XOR w[6]
+
++ Tính w[10] = w[9] XOR w[6]:
+  Bước 1: Lấy giá trị w[9] vừa tính được
+    w[9] = 1F3BA7F5
+  Bước 2: Lấy giá trị w[6] từ khóa ban đầu
+    w[6] = 95F2E9D1
+  Bước 3: Thực hiện XOR
+    w[9] = 1F3BA7F5
+    w[6] = 95F2E9D1
+    Thực hiện XOR: 1F⊕95=8A, 3B⊕F2=C9, A7⊕E9=4E, F5⊕D1=24
+    ==>> w[10] = 8AC94E24
+
+--- Tính w[11] (j=11) ---
+  → j=11 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[11] = w[10] XOR w[7]
+
++ Tính w[11] = w[10] XOR w[7]:
+  Bước 1: Lấy giá trị w[10] vừa tính được
+    w[10] = 8AC94E24
+  Bước 2: Lấy giá trị w[7] từ khóa ban đầu
+    w[7] = ED8A91A9
+  Bước 3: Thực hiện XOR
+    w[10] = 8AC94E24
+    w[7] = ED8A91A9
+    Thực hiện XOR: 8A⊕ED=67, C9⊕8A=43, 4E⊕91=DF, 24⊕A9=8D
+    ==>> w[11] = 6743DF8D
+
+--- KẾT QUẢ KHÓA VÒNG 2 ---
+Từ w[8] đến w[11]:
+  w[8] = AA81005C
+  w[9] = 1F3BA7F5
+  w[10] = 8AC94E24
+  w[11] = 6743DF8D
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ AA 1F 8A 67 ║
+║ 81 3B C9 43 ║
+║ 00 A7 4E DF ║
+║ 5C F5 24 8D ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 3 ---
+Tính toán w[12] đến w[15]:
+--- Tính w[12] (j=12) ---
+  → j=12 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[12] = trans(w[11]) XOR w[8]
+
++ Tính trans(w[11]):
+  Bước 1: Lấy giá trị w[11] từ vòng trước
+    w[11] = 6743DF8D
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[11]
+    Input: 6743DF8D
+    Output: 43678DDF (sau khi xoay)
+    RotWord(6743DF8D) = 43678DDF
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 43678DDF
+    Tra S-Box: 43→1A, 67→85, 8D→5D, DF→9E
+    Output: 1A855D9E
+    SubWord(43678DDF) = 1A855D9E
+  Bước 4: Lấy hằng số Rcon cho round 3
+    Rcon[3] = 04000000
+  Bước 5: Tính trans(w[11]) = SubWord XOR Rcon
+    Input 1: 1A855D9E (SubWord)
+    Input 2: 04000000 (Rcon[3])
+    Thực hiện XOR: 1A⊕04=1E, 85⊕00=85, 5D⊕00=5D, 9E⊕00=9E
+    ==>> trans(w[11]) = 1E855D9E
+
++ Tính w[12] = trans(w[11]) XOR w[8]:
+  Bước 6: Lấy giá trị w[8] từ khóa ban đầu
+    w[8] = AA81005C
+  Bước 7: Thực hiện XOR
+    trans(w[11]) = 1E855D9E
+    w[8] = AA81005C
+    Thực hiện XOR: 1E⊕AA=B4, 85⊕81=04, 5D⊕00=5D, 9E⊕5C=C2
+    ==>> w[12] = B4045DC2
+
+--- Tính w[13] (j=13) ---
+  → j=13 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[13] = w[12] XOR w[9]
+
++ Tính w[13] = w[12] XOR w[9]:
+  Bước 1: Lấy giá trị w[12] vừa tính được
+    w[12] = B4045DC2
+  Bước 2: Lấy giá trị w[9] từ khóa ban đầu
+    w[9] = 1F3BA7F5
+  Bước 3: Thực hiện XOR
+    w[12] = B4045DC2
+    w[9] = 1F3BA7F5
+    Thực hiện XOR: B4⊕1F=AB, 04⊕3B=3F, 5D⊕A7=FA, C2⊕F5=37
+    ==>> w[13] = AB3FFA37
+
+--- Tính w[14] (j=14) ---
+  → j=14 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[14] = w[13] XOR w[10]
+
++ Tính w[14] = w[13] XOR w[10]:
+  Bước 1: Lấy giá trị w[13] vừa tính được
+    w[13] = AB3FFA37
+  Bước 2: Lấy giá trị w[10] từ khóa ban đầu
+    w[10] = 8AC94E24
+  Bước 3: Thực hiện XOR
+    w[13] = AB3FFA37
+    w[10] = 8AC94E24
+    Thực hiện XOR: AB⊕8A=21, 3F⊕C9=F6, FA⊕4E=B4, 37⊕24=13
+    ==>> w[14] = 21F6B413
+
+--- Tính w[15] (j=15) ---
+  → j=15 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[15] = w[14] XOR w[11]
+
++ Tính w[15] = w[14] XOR w[11]:
+  Bước 1: Lấy giá trị w[14] vừa tính được
+    w[14] = 21F6B413
+  Bước 2: Lấy giá trị w[11] từ khóa ban đầu
+    w[11] = 6743DF8D
+  Bước 3: Thực hiện XOR
+    w[14] = 21F6B413
+    w[11] = 6743DF8D
+    Thực hiện XOR: 21⊕67=46, F6⊕43=B5, B4⊕DF=6B, 13⊕8D=9E
+    ==>> w[15] = 46B56B9E
+
+--- KẾT QUẢ KHÓA VÒNG 3 ---
+Từ w[12] đến w[15]:
+  w[12] = B4045DC2
+  w[13] = AB3FFA37
+  w[14] = 21F6B413
+  w[15] = 46B56B9E
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ B4 AB 21 46 ║
+║ 04 3F F6 B5 ║
+║ 5D FA B4 6B ║
+║ C2 37 13 9E ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 4 ---
+Tính toán w[16] đến w[19]:
+--- Tính w[16] (j=16) ---
+  → j=16 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[16] = trans(w[15]) XOR w[12]
+
++ Tính trans(w[15]):
+  Bước 1: Lấy giá trị w[15] từ vòng trước
+    w[15] = 46B56B9E
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[15]
+    Input: 46B56B9E
+    Output: B5469E6B (sau khi xoay)
+    RotWord(46B56B9E) = B5469E6B
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: B5469E6B
+    Tra S-Box: B5→D5, 46→5A, 9E→0B, 6B→7F
+    Output: D55A0B7F
+    SubWord(B5469E6B) = D55A0B7F
+  Bước 4: Lấy hằng số Rcon cho round 4
+    Rcon[4] = 08000000
+  Bước 5: Tính trans(w[15]) = SubWord XOR Rcon
+    Input 1: D55A0B7F (SubWord)
+    Input 2: 08000000 (Rcon[4])
+    Thực hiện XOR: D5⊕08=DD, 5A⊕00=5A, 0B⊕00=0B, 7F⊕00=7F
+    ==>> trans(w[15]) = DD5A0B7F
+
++ Tính w[16] = trans(w[15]) XOR w[12]:
+  Bước 6: Lấy giá trị w[12] từ khóa ban đầu
+    w[12] = B4045DC2
+  Bước 7: Thực hiện XOR
+    trans(w[15]) = DD5A0B7F
+    w[12] = B4045DC2
+    Thực hiện XOR: DD⊕B4=69, 5A⊕04=5E, 0B⊕5D=56, 7F⊕C2=BD
+    ==>> w[16] = 695E56BD
+
+--- Tính w[17] (j=17) ---
+  → j=17 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[17] = w[16] XOR w[13]
+
++ Tính w[17] = w[16] XOR w[13]:
+  Bước 1: Lấy giá trị w[16] vừa tính được
+    w[16] = 695E56BD
+  Bước 2: Lấy giá trị w[13] từ khóa ban đầu
+    w[13] = AB3FFA37
+  Bước 3: Thực hiện XOR
+    w[16] = 695E56BD
+    w[13] = AB3FFA37
+    Thực hiện XOR: 69⊕AB=C2, 5E⊕3F=61, 56⊕FA=AC, BD⊕37=8A
+    ==>> w[17] = C261AC8A
+
+--- Tính w[18] (j=18) ---
+  → j=18 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[18] = w[17] XOR w[14]
+
++ Tính w[18] = w[17] XOR w[14]:
+  Bước 1: Lấy giá trị w[17] vừa tính được
+    w[17] = C261AC8A
+  Bước 2: Lấy giá trị w[14] từ khóa ban đầu
+    w[14] = 21F6B413
+  Bước 3: Thực hiện XOR
+    w[17] = C261AC8A
+    w[14] = 21F6B413
+    Thực hiện XOR: C2⊕21=E3, 61⊕F6=97, AC⊕B4=18, 8A⊕13=99
+    ==>> w[18] = E3971899
+
+--- Tính w[19] (j=19) ---
+  → j=19 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[19] = w[18] XOR w[15]
+
++ Tính w[19] = w[18] XOR w[15]:
+  Bước 1: Lấy giá trị w[18] vừa tính được
+    w[18] = E3971899
+  Bước 2: Lấy giá trị w[15] từ khóa ban đầu
+    w[15] = 46B56B9E
+  Bước 3: Thực hiện XOR
+    w[18] = E3971899
+    w[15] = 46B56B9E
+    Thực hiện XOR: E3⊕46=A5, 97⊕B5=22, 18⊕6B=73, 99⊕9E=07
+    ==>> w[19] = A5227307
+
+--- KẾT QUẢ KHÓA VÒNG 4 ---
+Từ w[16] đến w[19]:
+  w[16] = 695E56BD
+  w[17] = C261AC8A
+  w[18] = E3971899
+  w[19] = A5227307
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ 69 C2 E3 A5 ║
+║ 5E 61 97 22 ║
+║ 56 AC 18 73 ║
+║ BD 8A 99 07 ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 5 ---
+Tính toán w[20] đến w[23]:
+--- Tính w[20] (j=20) ---
+  → j=20 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[20] = trans(w[19]) XOR w[16]
+
++ Tính trans(w[19]):
+  Bước 1: Lấy giá trị w[19] từ vòng trước
+    w[19] = A5227307
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[19]
+    Input: A5227307
+    Output: 22A50773 (sau khi xoay)
+    RotWord(A5227307) = 22A50773
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 22A50773
+    Tra S-Box: 22→93, A5→06, 07→C5, 73→8F
+    Output: 9306C58F
+    SubWord(22A50773) = 9306C58F
+  Bước 4: Lấy hằng số Rcon cho round 5
+    Rcon[5] = 10000000
+  Bước 5: Tính trans(w[19]) = SubWord XOR Rcon
+    Input 1: 9306C58F (SubWord)
+    Input 2: 10000000 (Rcon[5])
+    Thực hiện XOR: 93⊕10=83, 06⊕00=06, C5⊕00=C5, 8F⊕00=8F
+    ==>> trans(w[19]) = 8306C58F
+
++ Tính w[20] = trans(w[19]) XOR w[16]:
+  Bước 6: Lấy giá trị w[16] từ khóa ban đầu
+    w[16] = 695E56BD
+  Bước 7: Thực hiện XOR
+    trans(w[19]) = 8306C58F
+    w[16] = 695E56BD
+    Thực hiện XOR: 83⊕69=EA, 06⊕5E=58, C5⊕56=93, 8F⊕BD=32
+    ==>> w[20] = EA589332
+
+--- Tính w[21] (j=21) ---
+  → j=21 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[21] = w[20] XOR w[17]
+
++ Tính w[21] = w[20] XOR w[17]:
+  Bước 1: Lấy giá trị w[20] vừa tính được
+    w[20] = EA589332
+  Bước 2: Lấy giá trị w[17] từ khóa ban đầu
+    w[17] = C261AC8A
+  Bước 3: Thực hiện XOR
+    w[20] = EA589332
+    w[17] = C261AC8A
+    Thực hiện XOR: EA⊕C2=28, 58⊕61=39, 93⊕AC=3F, 32⊕8A=B8
+    ==>> w[21] = 28393FB8
+
+--- Tính w[22] (j=22) ---
+  → j=22 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[22] = w[21] XOR w[18]
+
++ Tính w[22] = w[21] XOR w[18]:
+  Bước 1: Lấy giá trị w[21] vừa tính được
+    w[21] = 28393FB8
+  Bước 2: Lấy giá trị w[18] từ khóa ban đầu
+    w[18] = E3971899
+  Bước 3: Thực hiện XOR
+    w[21] = 28393FB8
+    w[18] = E3971899
+    Thực hiện XOR: 28⊕E3=CB, 39⊕97=AE, 3F⊕18=27, B8⊕99=21
+    ==>> w[22] = CBAE2721
+
+--- Tính w[23] (j=23) ---
+  → j=23 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[23] = w[22] XOR w[19]
+
++ Tính w[23] = w[22] XOR w[19]:
+  Bước 1: Lấy giá trị w[22] vừa tính được
+    w[22] = CBAE2721
+  Bước 2: Lấy giá trị w[19] từ khóa ban đầu
+    w[19] = A5227307
+  Bước 3: Thực hiện XOR
+    w[22] = CBAE2721
+    w[19] = A5227307
+    Thực hiện XOR: CB⊕A5=6E, AE⊕22=8C, 27⊕73=54, 21⊕07=26
+    ==>> w[23] = 6E8C5426
+
+--- KẾT QUẢ KHÓA VÒNG 5 ---
+Từ w[20] đến w[23]:
+  w[20] = EA589332
+  w[21] = 28393FB8
+  w[22] = CBAE2721
+  w[23] = 6E8C5426
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ EA 28 CB 6E ║
+║ 58 39 AE 8C ║
+║ 93 3F 27 54 ║
+║ 32 B8 21 26 ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 6 ---
+Tính toán w[24] đến w[27]:
+--- Tính w[24] (j=24) ---
+  → j=24 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[24] = trans(w[23]) XOR w[20]
+
++ Tính trans(w[23]):
+  Bước 1: Lấy giá trị w[23] từ vòng trước
+    w[23] = 6E8C5426
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[23]
+    Input: 6E8C5426
+    Output: 8C6E2654 (sau khi xoay)
+    RotWord(6E8C5426) = 8C6E2654
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 8C6E2654
+    Tra S-Box: 8C→64, 6E→9F, 26→F7, 54→20
+    Output: 649FF720
+    SubWord(8C6E2654) = 649FF720
+  Bước 4: Lấy hằng số Rcon cho round 6
+    Rcon[6] = 20000000
+  Bước 5: Tính trans(w[23]) = SubWord XOR Rcon
+    Input 1: 649FF720 (SubWord)
+    Input 2: 20000000 (Rcon[6])
+    Thực hiện XOR: 64⊕20=44, 9F⊕00=9F, F7⊕00=F7, 20⊕00=20
+    ==>> trans(w[23]) = 449FF720
+
++ Tính w[24] = trans(w[23]) XOR w[20]:
+  Bước 6: Lấy giá trị w[20] từ khóa ban đầu
+    w[20] = EA589332
+  Bước 7: Thực hiện XOR
+    trans(w[23]) = 449FF720
+    w[20] = EA589332
+    Thực hiện XOR: 44⊕EA=AE, 9F⊕58=C7, F7⊕93=64, 20⊕32=12
+    ==>> w[24] = AEC76412
+
+--- Tính w[25] (j=25) ---
+  → j=25 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[25] = w[24] XOR w[21]
+
++ Tính w[25] = w[24] XOR w[21]:
+  Bước 1: Lấy giá trị w[24] vừa tính được
+    w[24] = AEC76412
+  Bước 2: Lấy giá trị w[21] từ khóa ban đầu
+    w[21] = 28393FB8
+  Bước 3: Thực hiện XOR
+    w[24] = AEC76412
+    w[21] = 28393FB8
+    Thực hiện XOR: AE⊕28=86, C7⊕39=FE, 64⊕3F=5B, 12⊕B8=AA
+    ==>> w[25] = 86FE5BAA
+
+--- Tính w[26] (j=26) ---
+  → j=26 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[26] = w[25] XOR w[22]
+
++ Tính w[26] = w[25] XOR w[22]:
+  Bước 1: Lấy giá trị w[25] vừa tính được
+    w[25] = 86FE5BAA
+  Bước 2: Lấy giá trị w[22] từ khóa ban đầu
+    w[22] = CBAE2721
+  Bước 3: Thực hiện XOR
+    w[25] = 86FE5BAA
+    w[22] = CBAE2721
+    Thực hiện XOR: 86⊕CB=4D, FE⊕AE=50, 5B⊕27=7C, AA⊕21=8B
+    ==>> w[26] = 4D507C8B
+
+--- Tính w[27] (j=27) ---
+  → j=27 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[27] = w[26] XOR w[23]
+
++ Tính w[27] = w[26] XOR w[23]:
+  Bước 1: Lấy giá trị w[26] vừa tính được
+    w[26] = 4D507C8B
+  Bước 2: Lấy giá trị w[23] từ khóa ban đầu
+    w[23] = 6E8C5426
+  Bước 3: Thực hiện XOR
+    w[26] = 4D507C8B
+    w[23] = 6E8C5426
+    Thực hiện XOR: 4D⊕6E=23, 50⊕8C=DC, 7C⊕54=28, 8B⊕26=AD
+    ==>> w[27] = 23DC28AD
+
+--- KẾT QUẢ KHÓA VÒNG 6 ---
+Từ w[24] đến w[27]:
+  w[24] = AEC76412
+  w[25] = 86FE5BAA
+  w[26] = 4D507C8B
+  w[27] = 23DC28AD
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ AE 86 4D 23 ║
+║ C7 FE 50 DC ║
+║ 64 5B 7C 28 ║
+║ 12 AA 8B AD ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 7 ---
+Tính toán w[28] đến w[31]:
+--- Tính w[28] (j=28) ---
+  → j=28 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[28] = trans(w[27]) XOR w[24]
+
++ Tính trans(w[27]):
+  Bước 1: Lấy giá trị w[27] từ vòng trước
+    w[27] = 23DC28AD
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[27]
+    Input: 23DC28AD
+    Output: DC23AD28 (sau khi xoay)
+    RotWord(23DC28AD) = DC23AD28
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: DC23AD28
+    Tra S-Box: DC→86, 23→26, AD→95, 28→34
+    Output: 86269534
+    SubWord(DC23AD28) = 86269534
+  Bước 4: Lấy hằng số Rcon cho round 7
+    Rcon[7] = 40000000
+  Bước 5: Tính trans(w[27]) = SubWord XOR Rcon
+    Input 1: 86269534 (SubWord)
+    Input 2: 40000000 (Rcon[7])
+    Thực hiện XOR: 86⊕40=C6, 26⊕00=26, 95⊕00=95, 34⊕00=34
+    ==>> trans(w[27]) = C6269534
+
++ Tính w[28] = trans(w[27]) XOR w[24]:
+  Bước 6: Lấy giá trị w[24] từ khóa ban đầu
+    w[24] = AEC76412
+  Bước 7: Thực hiện XOR
+    trans(w[27]) = C6269534
+    w[24] = AEC76412
+    Thực hiện XOR: C6⊕AE=68, 26⊕C7=E1, 95⊕64=F1, 34⊕12=26
+    ==>> w[28] = 68E1F126
+
+--- Tính w[29] (j=29) ---
+  → j=29 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[29] = w[28] XOR w[25]
+
++ Tính w[29] = w[28] XOR w[25]:
+  Bước 1: Lấy giá trị w[28] vừa tính được
+    w[28] = 68E1F126
+  Bước 2: Lấy giá trị w[25] từ khóa ban đầu
+    w[25] = 86FE5BAA
+  Bước 3: Thực hiện XOR
+    w[28] = 68E1F126
+    w[25] = 86FE5BAA
+    Thực hiện XOR: 68⊕86=EE, E1⊕FE=1F, F1⊕5B=AA, 26⊕AA=8C
+    ==>> w[29] = EE1FAA8C
+
+--- Tính w[30] (j=30) ---
+  → j=30 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[30] = w[29] XOR w[26]
+
++ Tính w[30] = w[29] XOR w[26]:
+  Bước 1: Lấy giá trị w[29] vừa tính được
+    w[29] = EE1FAA8C
+  Bước 2: Lấy giá trị w[26] từ khóa ban đầu
+    w[26] = 4D507C8B
+  Bước 3: Thực hiện XOR
+    w[29] = EE1FAA8C
+    w[26] = 4D507C8B
+    Thực hiện XOR: EE⊕4D=A3, 1F⊕50=4F, AA⊕7C=D6, 8C⊕8B=07
+    ==>> w[30] = A34FD607
+
+--- Tính w[31] (j=31) ---
+  → j=31 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[31] = w[30] XOR w[27]
+
++ Tính w[31] = w[30] XOR w[27]:
+  Bước 1: Lấy giá trị w[30] vừa tính được
+    w[30] = A34FD607
+  Bước 2: Lấy giá trị w[27] từ khóa ban đầu
+    w[27] = 23DC28AD
+  Bước 3: Thực hiện XOR
+    w[30] = A34FD607
+    w[27] = 23DC28AD
+    Thực hiện XOR: A3⊕23=80, 4F⊕DC=93, D6⊕28=FE, 07⊕AD=AA
+    ==>> w[31] = 8093FEAA
+
+--- KẾT QUẢ KHÓA VÒNG 7 ---
+Từ w[28] đến w[31]:
+  w[28] = 68E1F126
+  w[29] = EE1FAA8C
+  w[30] = A34FD607
+  w[31] = 8093FEAA
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ 68 EE A3 80 ║
+║ E1 1F 4F 93 ║
+║ F1 AA D6 FE ║
+║ 26 8C 07 AA ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 8 ---
+Tính toán w[32] đến w[35]:
+--- Tính w[32] (j=32) ---
+  → j=32 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[32] = trans(w[31]) XOR w[28]
+
++ Tính trans(w[31]):
+  Bước 1: Lấy giá trị w[31] từ vòng trước
+    w[31] = 8093FEAA
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[31]
+    Input: 8093FEAA
+    Output: 9380AAFE (sau khi xoay)
+    RotWord(8093FEAA) = 9380AAFE
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 9380AAFE
+    Tra S-Box: 93→DC, 80→CD, AA→AC, FE→BB
+    Output: DCCDACBB
+    SubWord(9380AAFE) = DCCDACBB
+  Bước 4: Lấy hằng số Rcon cho round 8
+    Rcon[8] = 80000000
+  Bước 5: Tính trans(w[31]) = SubWord XOR Rcon
+    Input 1: DCCDACBB (SubWord)
+    Input 2: 80000000 (Rcon[8])
+    Thực hiện XOR: DC⊕80=5C, CD⊕00=CD, AC⊕00=AC, BB⊕00=BB
+    ==>> trans(w[31]) = 5CCDACBB
+
++ Tính w[32] = trans(w[31]) XOR w[28]:
+  Bước 6: Lấy giá trị w[28] từ khóa ban đầu
+    w[28] = 68E1F126
+  Bước 7: Thực hiện XOR
+    trans(w[31]) = 5CCDACBB
+    w[28] = 68E1F126
+    Thực hiện XOR: 5C⊕68=34, CD⊕E1=2C, AC⊕F1=5D, BB⊕26=9D
+    ==>> w[32] = 342C5D9D
+
+--- Tính w[33] (j=33) ---
+  → j=33 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[33] = w[32] XOR w[29]
+
++ Tính w[33] = w[32] XOR w[29]:
+  Bước 1: Lấy giá trị w[32] vừa tính được
+    w[32] = 342C5D9D
+  Bước 2: Lấy giá trị w[29] từ khóa ban đầu
+    w[29] = EE1FAA8C
+  Bước 3: Thực hiện XOR
+    w[32] = 342C5D9D
+    w[29] = EE1FAA8C
+    Thực hiện XOR: 34⊕EE=DA, 2C⊕1F=33, 5D⊕AA=F7, 9D⊕8C=11
+    ==>> w[33] = DA33F711
+
+--- Tính w[34] (j=34) ---
+  → j=34 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[34] = w[33] XOR w[30]
+
++ Tính w[34] = w[33] XOR w[30]:
+  Bước 1: Lấy giá trị w[33] vừa tính được
+    w[33] = DA33F711
+  Bước 2: Lấy giá trị w[30] từ khóa ban đầu
+    w[30] = A34FD607
+  Bước 3: Thực hiện XOR
+    w[33] = DA33F711
+    w[30] = A34FD607
+    Thực hiện XOR: DA⊕A3=79, 33⊕4F=7C, F7⊕D6=21, 11⊕07=16
+    ==>> w[34] = 797C2116
+
+--- Tính w[35] (j=35) ---
+  → j=35 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[35] = w[34] XOR w[31]
+
++ Tính w[35] = w[34] XOR w[31]:
+  Bước 1: Lấy giá trị w[34] vừa tính được
+    w[34] = 797C2116
+  Bước 2: Lấy giá trị w[31] từ khóa ban đầu
+    w[31] = 8093FEAA
+  Bước 3: Thực hiện XOR
+    w[34] = 797C2116
+    w[31] = 8093FEAA
+    Thực hiện XOR: 79⊕80=F9, 7C⊕93=EF, 21⊕FE=DF, 16⊕AA=BC
+    ==>> w[35] = F9EFDFBC
+
+--- KẾT QUẢ KHÓA VÒNG 8 ---
+Từ w[32] đến w[35]:
+  w[32] = 342C5D9D
+  w[33] = DA33F711
+  w[34] = 797C2116
+  w[35] = F9EFDFBC
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ 34 DA 79 F9 ║
+║ 2C 33 7C EF ║
+║ 5D F7 21 DF ║
+║ 9D 11 16 BC ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 9 ---
+Tính toán w[36] đến w[39]:
+--- Tính w[36] (j=36) ---
+  → j=36 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[36] = trans(w[35]) XOR w[32]
+
++ Tính trans(w[35]):
+  Bước 1: Lấy giá trị w[35] từ vòng trước
+    w[35] = F9EFDFBC
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[35]
+    Input: F9EFDFBC
+    Output: EFF9BCDF (sau khi xoay)
+    RotWord(F9EFDFBC) = EFF9BCDF
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: EFF9BCDF
+    Tra S-Box: EF→DF, F9→99, BC→65, DF→9E
+    Output: DF99659E
+    SubWord(EFF9BCDF) = DF99659E
+  Bước 4: Lấy hằng số Rcon cho round 9
+    Rcon[9] = 1B000000
+  Bước 5: Tính trans(w[35]) = SubWord XOR Rcon
+    Input 1: DF99659E (SubWord)
+    Input 2: 1B000000 (Rcon[9])
+    Thực hiện XOR: DF⊕1B=C4, 99⊕00=99, 65⊕00=65, 9E⊕00=9E
+    ==>> trans(w[35]) = C499659E
+
++ Tính w[36] = trans(w[35]) XOR w[32]:
+  Bước 6: Lấy giá trị w[32] từ khóa ban đầu
+    w[32] = 342C5D9D
+  Bước 7: Thực hiện XOR
+    trans(w[35]) = C499659E
+    w[32] = 342C5D9D
+    Thực hiện XOR: C4⊕34=F0, 99⊕2C=B5, 65⊕5D=38, 9E⊕9D=03
+    ==>> w[36] = F0B53803
+
+--- Tính w[37] (j=37) ---
+  → j=37 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[37] = w[36] XOR w[33]
+
++ Tính w[37] = w[36] XOR w[33]:
+  Bước 1: Lấy giá trị w[36] vừa tính được
+    w[36] = F0B53803
+  Bước 2: Lấy giá trị w[33] từ khóa ban đầu
+    w[33] = DA33F711
+  Bước 3: Thực hiện XOR
+    w[36] = F0B53803
+    w[33] = DA33F711
+    Thực hiện XOR: F0⊕DA=2A, B5⊕33=86, 38⊕F7=CF, 03⊕11=12
+    ==>> w[37] = 2A86CF12
+
+--- Tính w[38] (j=38) ---
+  → j=38 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[38] = w[37] XOR w[34]
+
++ Tính w[38] = w[37] XOR w[34]:
+  Bước 1: Lấy giá trị w[37] vừa tính được
+    w[37] = 2A86CF12
+  Bước 2: Lấy giá trị w[34] từ khóa ban đầu
+    w[34] = 797C2116
+  Bước 3: Thực hiện XOR
+    w[37] = 2A86CF12
+    w[34] = 797C2116
+    Thực hiện XOR: 2A⊕79=53, 86⊕7C=FA, CF⊕21=EE, 12⊕16=04
+    ==>> w[38] = 53FAEE04
+
+--- Tính w[39] (j=39) ---
+  → j=39 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[39] = w[38] XOR w[35]
+
++ Tính w[39] = w[38] XOR w[35]:
+  Bước 1: Lấy giá trị w[38] vừa tính được
+    w[38] = 53FAEE04
+  Bước 2: Lấy giá trị w[35] từ khóa ban đầu
+    w[35] = F9EFDFBC
+  Bước 3: Thực hiện XOR
+    w[38] = 53FAEE04
+    w[35] = F9EFDFBC
+    Thực hiện XOR: 53⊕F9=AA, FA⊕EF=15, EE⊕DF=31, 04⊕BC=B8
+    ==>> w[39] = AA1531B8
+
+--- KẾT QUẢ KHÓA VÒNG 9 ---
+Từ w[36] đến w[39]:
+  w[36] = F0B53803
+  w[37] = 2A86CF12
+  w[38] = 53FAEE04
+  w[39] = AA1531B8
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ F0 2A 53 AA ║
+║ B5 86 FA 15 ║
+║ 38 CF EE 31 ║
+║ 03 12 04 B8 ║
+╚════════════════════════╝
+
+
+--- KHÓA VÒNG 10 ---
+Tính toán w[40] đến w[43]:
+--- Tính w[40] (j=40) ---
+  → j=40 là bội số của 4 → Áp dụng công thức đặc biệt
+  CÔNG THỨC: w[40] = trans(w[39]) XOR w[36]
+
++ Tính trans(w[39]):
+  Bước 1: Lấy giá trị w[39] từ vòng trước
+    w[39] = AA1531B8
+  Bước 2: Thực hiện RotWord (xoay trái 1 byte) trên w[39]
+    Input: AA1531B8
+    Output: 15AAB831 (sau khi xoay)
+    RotWord(AA1531B8) = 15AAB831
+  Bước 3: Thực hiện SubWord (thay thế byte qua S-Box) trên kết quả RotWord
+    Input: 15AAB831
+    Tra S-Box: 15→59, AA→AC, B8→6C, 31→C7
+    Output: 59AC6CC7
+    SubWord(15AAB831) = 59AC6CC7
+  Bước 4: Lấy hằng số Rcon cho round 10
+    Rcon[10] = 36000000
+  Bước 5: Tính trans(w[39]) = SubWord XOR Rcon
+    Input 1: 59AC6CC7 (SubWord)
+    Input 2: 36000000 (Rcon[10])
+    Thực hiện XOR: 59⊕36=6F, AC⊕00=AC, 6C⊕00=6C, C7⊕00=C7
+    ==>> trans(w[39]) = 6FAC6CC7
+
++ Tính w[40] = trans(w[39]) XOR w[36]:
+  Bước 6: Lấy giá trị w[36] từ khóa ban đầu
+    w[36] = F0B53803
+  Bước 7: Thực hiện XOR
+    trans(w[39]) = 6FAC6CC7
+    w[36] = F0B53803
+    Thực hiện XOR: 6F⊕F0=9F, AC⊕B5=19, 6C⊕38=54, C7⊕03=C4
+    ==>> w[40] = 9F1954C4
+
+--- Tính w[41] (j=41) ---
+  → j=41 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[41] = w[40] XOR w[37]
+
++ Tính w[41] = w[40] XOR w[37]:
+  Bước 1: Lấy giá trị w[40] vừa tính được
+    w[40] = 9F1954C4
+  Bước 2: Lấy giá trị w[37] từ khóa ban đầu
+    w[37] = 2A86CF12
+  Bước 3: Thực hiện XOR
+    w[40] = 9F1954C4
+    w[37] = 2A86CF12
+    Thực hiện XOR: 9F⊕2A=B5, 19⊕86=9F, 54⊕CF=9B, C4⊕12=D6
+    ==>> w[41] = B59F9BD6
+
+--- Tính w[42] (j=42) ---
+  → j=42 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[42] = w[41] XOR w[38]
+
++ Tính w[42] = w[41] XOR w[38]:
+  Bước 1: Lấy giá trị w[41] vừa tính được
+    w[41] = B59F9BD6
+  Bước 2: Lấy giá trị w[38] từ khóa ban đầu
+    w[38] = 53FAEE04
+  Bước 3: Thực hiện XOR
+    w[41] = B59F9BD6
+    w[38] = 53FAEE04
+    Thực hiện XOR: B5⊕53=E6, 9F⊕FA=65, 9B⊕EE=75, D6⊕04=D2
+    ==>> w[42] = E66575D2
+
+--- Tính w[43] (j=43) ---
+  → j=43 không phải bội số của 4 → Áp dụng công thức thông thường
+  CÔNG THỨC: w[43] = w[42] XOR w[39]
+
++ Tính w[43] = w[42] XOR w[39]:
+  Bước 1: Lấy giá trị w[42] vừa tính được
+    w[42] = E66575D2
+  Bước 2: Lấy giá trị w[39] từ khóa ban đầu
+    w[39] = AA1531B8
+  Bước 3: Thực hiện XOR
+    w[42] = E66575D2
+    w[39] = AA1531B8
+    Thực hiện XOR: E6⊕AA=4C, 65⊕15=70, 75⊕31=44, D2⊕B8=6A
+    ==>> w[43] = 4C70446A
+
+--- KẾT QUẢ KHÓA VÒNG 10 ---
+Từ w[40] đến w[43]:
+  w[40] = 9F1954C4
+  w[41] = B59F9BD6
+  w[42] = E66575D2
+  w[43] = 4C70446A
+Ma trận khóa vòng:
+╔════════════════════════╗
+║ 9F B5 E6 4C ║
+║ 19 9F 65 70 ║
+║ 54 9B 75 44 ║
+║ C4 D6 D2 6A ║
+╚════════════════════════╝
+
+
+
+--- Quá trình mã hóa ---
+⚠️ Ghi chú: Log tất cả các khối để theo dõi rõ toàn bộ dữ liệu (bao gồm phần có '@123').
+
+==================== KHỐI 0 ====================
+Dữ liệu khối 0 (hex): 27 08 0D 07 E0 1C C0 0D 06 E0 2D 66 E1 E4 D7 D8
+Trạng thái bản rõ:
+╔════════════════════════╗
+║ 27 E0 06 E1 ║
+║ 08 1C E0 E4 ║
+║ 0D C0 2D D7 ║
+║ 07 0D 66 D8 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (0) --
+Khóa vòng:
+╔════════════════════════╗
+║ 6B 63 20 78 ║
+║ 68 6E 48 78 ║
+║ 6F 74 4E 78 ║
+║ 61 74 78 78 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state ban đầu:
+• Hàng 0: 27⊕6B=4C, E0⊕63=83, 06⊕20=26, E1⊕78=99
+• Hàng 1: 08⊕68=60, 1C⊕6E=72, E0⊕48=A8, E4⊕78=9C
+• Hàng 2: 0D⊕6F=62, C0⊕74=B4, 2D⊕4E=63, D7⊕78=AF
+• Hàng 3: 07⊕61=66, 0D⊕74=79, 66⊕78=1E, D8⊕78=A0
+
+Kết quả sau Cộng Khóa Vòng (0):
+╔════════════════════════╗
+║ 4C 83 26 99 ║
+║ 60 72 A8 9C ║
+║ 62 B4 63 AF ║
+║ 66 79 1E A0 ║
+╚════════════════════════╝
+
+--- Vòng 1 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 4C -> SBox = 29
+state[0,1] 83 -> SBox = EC
+state[0,2] 26 -> SBox = F7
+state[0,3] 99 -> SBox = EE
+state[1,0] 60 -> SBox = D0
+state[1,1] 72 -> SBox = 40
+state[1,2] A8 -> SBox = C2
+state[1,3] 9C -> SBox = DE
+state[2,0] 62 -> SBox = AA
+state[2,1] B4 -> SBox = 8D
+state[2,2] 63 -> SBox = FB
+state[2,3] AF -> SBox = 79
+state[3,0] 66 -> SBox = 33
+state[3,1] 79 -> SBox = B6
+state[3,2] 1E -> SBox = 72
+state[3,3] A0 -> SBox = E0
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 29 EC F7 EE ║
+║ D0 40 C2 DE ║
+║ AA 8D FB 79 ║
+║ 33 B6 72 E0 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 29 EC F7 EE ║
+║ 40 C2 DE D0 ║
+║ FB 79 AA 8D ║
+║ E0 33 B6 72 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•29) XOR (03•40) XOR (01•FB) XOR (01•E0) = 89
+ s'[1][0] = (01•29) XOR (02•40) XOR (03•FB) XOR (01•E0) = 5F
+ s'[2][0] = (01•29) XOR (01•40) XOR (02•FB) XOR (03•E0) = BF
+ s'[3][0] = (03•29) XOR (01•40) XOR (01•FB) XOR (02•E0) = 1B
+
+Cột 1:
+ s'[0][1] = (02•EC) XOR (03•C2) XOR (01•79) XOR (01•33) = D4
+ s'[1][1] = (01•EC) XOR (02•C2) XOR (03•79) XOR (01•33) = CB
+ s'[2][1] = (01•EC) XOR (01•C2) XOR (02•79) XOR (03•33) = 89
+ s'[3][1] = (03•EC) XOR (01•C2) XOR (01•79) XOR (02•33) = F2
+
+Cột 2:
+ s'[0][2] = (02•F7) XOR (03•DE) XOR (01•AA) XOR (01•B6) = 90
+ s'[1][2] = (01•F7) XOR (02•DE) XOR (03•AA) XOR (01•B6) = 03
+ s'[2][2] = (01•F7) XOR (01•DE) XOR (02•AA) XOR (03•B6) = A7
+ s'[3][2] = (03•F7) XOR (01•DE) XOR (01•AA) XOR (02•B6) = 01
+
+Cột 3:
+ s'[0][3] = (02•EE) XOR (03•D0) XOR (01•8D) XOR (01•72) = 53
+ s'[1][3] = (01•EE) XOR (02•D0) XOR (03•8D) XOR (01•72) = AB
+ s'[2][3] = (01•EE) XOR (01•D0) XOR (02•8D) XOR (03•72) = A9
+ s'[3][3] = (03•EE) XOR (01•D0) XOR (01•8D) XOR (02•72) = 90
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 89 D4 90 53 ║
+║ 5F CB 03 AB ║
+║ BF 89 A7 A9 ║
+║ 1B F2 01 90 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (1) --
+Khóa vòng:
+╔════════════════════════╗
+║ D6 B5 95 ED ║
+║ D4 BA F2 8A ║
+║ D3 A7 E9 91 ║
+║ DD A9 D1 A9 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 89⊕D6=5F, D4⊕B5=61, 90⊕95=05, 53⊕ED=BE
+• Hàng 1: 5F⊕D4=8B, CB⊕BA=71, 03⊕F2=F1, AB⊕8A=21
+• Hàng 2: BF⊕D3=6C, 89⊕A7=2E, A7⊕E9=4E, A9⊕91=38
+• Hàng 3: 1B⊕DD=C6, F2⊕A9=5B, 01⊕D1=D0, 90⊕A9=39
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 5F 61 05 BE ║
+║ 8B 71 F1 21 ║
+║ 6C 2E 4E 38 ║
+║ C6 5B D0 39 ║
+╚════════════════════════╝
+
+--- Vòng 2 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 5F -> SBox = CF
+state[0,1] 61 -> SBox = EF
+state[0,2] 05 -> SBox = 6B
+state[0,3] BE -> SBox = AE
+state[1,0] 8B -> SBox = 3D
+state[1,1] 71 -> SBox = A3
+state[1,2] F1 -> SBox = A1
+state[1,3] 21 -> SBox = FD
+state[2,0] 6C -> SBox = 50
+state[2,1] 2E -> SBox = 31
+state[2,2] 4E -> SBox = 2F
+state[2,3] 38 -> SBox = 07
+state[3,0] C6 -> SBox = B4
+state[3,1] 5B -> SBox = 39
+state[3,2] D0 -> SBox = 70
+state[3,3] 39 -> SBox = 12
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ CF EF 6B AE ║
+║ 3D A3 A1 FD ║
+║ 50 31 2F 07 ║
+║ B4 39 70 12 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ CF EF 6B AE ║
+║ A3 A1 FD 3D ║
+║ 2F 07 50 31 ║
+║ 12 B4 39 70 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•CF) XOR (03•A3) XOR (01•2F) XOR (01•12) = 46
+ s'[1][0] = (01•CF) XOR (02•A3) XOR (03•2F) XOR (01•12) = F1
+ s'[2][0] = (01•CF) XOR (01•A3) XOR (02•2F) XOR (03•12) = 04
+ s'[3][0] = (03•CF) XOR (01•A3) XOR (01•2F) XOR (02•12) = E2
+
+Cột 1:
+ s'[0][1] = (02•EF) XOR (03•A1) XOR (01•07) XOR (01•B4) = 8E
+ s'[1][1] = (01•EF) XOR (02•A1) XOR (03•07) XOR (01•B4) = 0B
+ s'[2][1] = (01•EF) XOR (01•A1) XOR (02•07) XOR (03•B4) = 87
+ s'[3][1] = (03•EF) XOR (01•A1) XOR (01•07) XOR (02•B4) = FF
+
+Cột 2:
+ s'[0][2] = (02•6B) XOR (03•FD) XOR (01•50) XOR (01•39) = A3
+ s'[1][2] = (01•6B) XOR (02•FD) XOR (03•50) XOR (01•39) = 43
+ s'[2][2] = (01•6B) XOR (01•FD) XOR (02•50) XOR (03•39) = 7D
+ s'[3][2] = (03•6B) XOR (01•FD) XOR (01•50) XOR (02•39) = 62
+
+Cột 3:
+ s'[0][3] = (02•AE) XOR (03•3D) XOR (01•31) XOR (01•70) = 41
+ s'[1][3] = (01•AE) XOR (02•3D) XOR (03•31) XOR (01•70) = F7
+ s'[2][3] = (01•AE) XOR (01•3D) XOR (02•31) XOR (03•70) = 61
+ s'[3][3] = (03•AE) XOR (01•3D) XOR (01•31) XOR (02•70) = 05
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 46 8E A3 41 ║
+║ F1 0B 43 F7 ║
+║ 04 87 7D 61 ║
+║ E2 FF 62 05 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (2) --
+Khóa vòng:
+╔════════════════════════╗
+║ AA 1F 8A 67 ║
+║ 81 3B C9 43 ║
+║ 00 A7 4E DF ║
+║ 5C F5 24 8D ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 46⊕AA=EC, 8E⊕1F=91, A3⊕8A=29, 41⊕67=26
+• Hàng 1: F1⊕81=70, 0B⊕3B=30, 43⊕C9=8A, F7⊕43=B4
+• Hàng 2: 04⊕00=04, 87⊕A7=20, 7D⊕4E=33, 61⊕DF=BE
+• Hàng 3: E2⊕5C=BE, FF⊕F5=0A, 62⊕24=46, 05⊕8D=88
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ EC 91 29 26 ║
+║ 70 30 8A B4 ║
+║ 04 20 33 BE ║
+║ BE 0A 46 88 ║
+╚════════════════════════╝
+
+--- Vòng 3 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] EC -> SBox = CE
+state[0,1] 91 -> SBox = 81
+state[0,2] 29 -> SBox = A5
+state[0,3] 26 -> SBox = F7
+state[1,0] 70 -> SBox = 51
+state[1,1] 30 -> SBox = 04
+state[1,2] 8A -> SBox = 7E
+state[1,3] B4 -> SBox = 8D
+state[2,0] 04 -> SBox = F2
+state[2,1] 20 -> SBox = B7
+state[2,2] 33 -> SBox = C3
+state[2,3] BE -> SBox = AE
+state[3,0] BE -> SBox = AE
+state[3,1] 0A -> SBox = 67
+state[3,2] 46 -> SBox = 5A
+state[3,3] 88 -> SBox = C4
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ CE 81 A5 F7 ║
+║ 51 04 7E 8D ║
+║ F2 B7 C3 AE ║
+║ AE 67 5A C4 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ CE 81 A5 F7 ║
+║ 04 7E 8D 51 ║
+║ C3 AE F2 B7 ║
+║ C4 AE 67 5A ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•CE) XOR (03•04) XOR (01•C3) XOR (01•C4) = 8C
+ s'[1][0] = (01•CE) XOR (02•04) XOR (03•C3) XOR (01•C4) = 5C
+ s'[2][0] = (01•CE) XOR (01•04) XOR (02•C3) XOR (03•C4) = 00
+ s'[3][0] = (03•CE) XOR (01•04) XOR (01•C3) XOR (02•C4) = 1D
+
+Cột 1:
+ s'[0][1] = (02•81) XOR (03•7E) XOR (01•AE) XOR (01•AE) = 9B
+ s'[1][1] = (01•81) XOR (02•7E) XOR (03•AE) XOR (01•AE) = 3A
+ s'[2][1] = (01•81) XOR (01•7E) XOR (02•AE) XOR (03•AE) = 51
+ s'[3][1] = (03•81) XOR (01•7E) XOR (01•AE) XOR (02•AE) = 0F
+
+Cột 2:
+ s'[0][2] = (02•A5) XOR (03•8D) XOR (01•F2) XOR (01•67) = 48
+ s'[1][2] = (01•A5) XOR (02•8D) XOR (03•F2) XOR (01•67) = CE
+ s'[2][2] = (01•A5) XOR (01•8D) XOR (02•F2) XOR (03•67) = 7E
+ s'[3][2] = (03•A5) XOR (01•8D) XOR (01•F2) XOR (02•67) = 45
+
+Cột 3:
+ s'[0][3] = (02•F7) XOR (03•51) XOR (01•B7) XOR (01•5A) = EB
+ s'[1][3] = (01•F7) XOR (02•51) XOR (03•B7) XOR (01•5A) = CD
+ s'[2][3] = (01•F7) XOR (01•51) XOR (02•B7) XOR (03•5A) = 3D
+ s'[3][3] = (03•F7) XOR (01•51) XOR (01•B7) XOR (02•5A) = 50
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 8C 9B 48 EB ║
+║ 5C 3A CE CD ║
+║ 00 51 7E 3D ║
+║ 1D 0F 45 50 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (3) --
+Khóa vòng:
+╔════════════════════════╗
+║ B4 AB 21 46 ║
+║ 04 3F F6 B5 ║
+║ 5D FA B4 6B ║
+║ C2 37 13 9E ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 8C⊕B4=38, 9B⊕AB=30, 48⊕21=69, EB⊕46=AD
+• Hàng 1: 5C⊕04=58, 3A⊕3F=05, CE⊕F6=38, CD⊕B5=78
+• Hàng 2: 00⊕5D=5D, 51⊕FA=AB, 7E⊕B4=CA, 3D⊕6B=56
+• Hàng 3: 1D⊕C2=DF, 0F⊕37=38, 45⊕13=56, 50⊕9E=CE
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 38 30 69 AD ║
+║ 58 05 38 78 ║
+║ 5D AB CA 56 ║
+║ DF 38 56 CE ║
+╚════════════════════════╝
+
+--- Vòng 4 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 38 -> SBox = 07
+state[0,1] 30 -> SBox = 04
+state[0,2] 69 -> SBox = F9
+state[0,3] AD -> SBox = 95
+state[1,0] 58 -> SBox = 6A
+state[1,1] 05 -> SBox = 6B
+state[1,2] 38 -> SBox = 07
+state[1,3] 78 -> SBox = BC
+state[2,0] 5D -> SBox = 4C
+state[2,1] AB -> SBox = 62
+state[2,2] CA -> SBox = 74
+state[2,3] 56 -> SBox = B1
+state[3,0] DF -> SBox = 9E
+state[3,1] 38 -> SBox = 07
+state[3,2] 56 -> SBox = B1
+state[3,3] CE -> SBox = 8B
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 07 04 F9 95 ║
+║ 6A 6B 07 BC ║
+║ 4C 62 74 B1 ║
+║ 9E 07 B1 8B ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 07 04 F9 95 ║
+║ 6B 07 BC 6A ║
+║ 74 B1 4C 62 ║
+║ 8B 9E 07 B1 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•07) XOR (03•6B) XOR (01•74) XOR (01•8B) = 4C
+ s'[1][0] = (01•07) XOR (02•6B) XOR (03•74) XOR (01•8B) = C6
+ s'[2][0] = (01•07) XOR (01•6B) XOR (02•74) XOR (03•8B) = 02
+ s'[3][0] = (03•07) XOR (01•6B) XOR (01•74) XOR (02•8B) = 1B
+
+Cột 1:
+ s'[0][1] = (02•04) XOR (03•07) XOR (01•B1) XOR (01•9E) = 2E
+ s'[1][1] = (01•04) XOR (02•07) XOR (03•B1) XOR (01•9E) = 5C
+ s'[2][1] = (01•04) XOR (01•07) XOR (02•B1) XOR (03•9E) = C3
+ s'[3][1] = (03•04) XOR (01•07) XOR (01•B1) XOR (02•9E) = 9D
+
+Cột 2:
+ s'[0][2] = (02•F9) XOR (03•BC) XOR (01•4C) XOR (01•07) = 7D
+ s'[1][2] = (01•F9) XOR (02•BC) XOR (03•4C) XOR (01•07) = 49
+ s'[2][2] = (01•F9) XOR (01•BC) XOR (02•4C) XOR (03•07) = D4
+ s'[3][2] = (03•F9) XOR (01•BC) XOR (01•4C) XOR (02•07) = EE
+
+Cột 3:
+ s'[0][3] = (02•95) XOR (03•6A) XOR (01•62) XOR (01•B1) = 5C
+ s'[1][3] = (01•95) XOR (02•6A) XOR (03•62) XOR (01•B1) = 56
+ s'[2][3] = (01•95) XOR (01•6A) XOR (02•62) XOR (03•B1) = F3
+ s'[3][3] = (03•95) XOR (01•6A) XOR (01•62) XOR (02•B1) = D5
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 4C 2E 7D 5C ║
+║ C6 5C 49 56 ║
+║ 02 C3 D4 F3 ║
+║ 1B 9D EE D5 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (4) --
+Khóa vòng:
+╔════════════════════════╗
+║ 69 C2 E3 A5 ║
+║ 5E 61 97 22 ║
+║ 56 AC 18 73 ║
+║ BD 8A 99 07 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 4C⊕69=25, 2E⊕C2=EC, 7D⊕E3=9E, 5C⊕A5=F9
+• Hàng 1: C6⊕5E=98, 5C⊕61=3D, 49⊕97=DE, 56⊕22=74
+• Hàng 2: 02⊕56=54, C3⊕AC=6F, D4⊕18=CC, F3⊕73=80
+• Hàng 3: 1B⊕BD=A6, 9D⊕8A=17, EE⊕99=77, D5⊕07=D2
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 25 EC 9E F9 ║
+║ 98 3D DE 74 ║
+║ 54 6F CC 80 ║
+║ A6 17 77 D2 ║
+╚════════════════════════╝
+
+--- Vòng 5 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 25 -> SBox = 3F
+state[0,1] EC -> SBox = CE
+state[0,2] 9E -> SBox = 0B
+state[0,3] F9 -> SBox = 99
+state[1,0] 98 -> SBox = 46
+state[1,1] 3D -> SBox = 27
+state[1,2] DE -> SBox = 1D
+state[1,3] 74 -> SBox = 92
+state[2,0] 54 -> SBox = 20
+state[2,1] 6F -> SBox = A8
+state[2,2] CC -> SBox = 4B
+state[2,3] 80 -> SBox = CD
+state[3,0] A6 -> SBox = 24
+state[3,1] 17 -> SBox = F0
+state[3,2] 77 -> SBox = F5
+state[3,3] D2 -> SBox = B5
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 3F CE 0B 99 ║
+║ 46 27 1D 92 ║
+║ 20 A8 4B CD ║
+║ 24 F0 F5 B5 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 3F CE 0B 99 ║
+║ 27 1D 92 46 ║
+║ 4B CD 20 A8 ║
+║ B5 24 F0 F5 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•3F) XOR (03•27) XOR (01•4B) XOR (01•B5) = E9
+ s'[1][0] = (01•3F) XOR (02•27) XOR (03•4B) XOR (01•B5) = 19
+ s'[2][0] = (01•3F) XOR (01•27) XOR (02•4B) XOR (03•B5) = 4A
+ s'[3][0] = (03•3F) XOR (01•27) XOR (01•4B) XOR (02•B5) = 5C
+
+Cột 1:
+ s'[0][1] = (02•CE) XOR (03•1D) XOR (01•CD) XOR (01•24) = 49
+ s'[1][1] = (01•CE) XOR (02•1D) XOR (03•CD) XOR (01•24) = 9C
+ s'[2][1] = (01•CE) XOR (01•1D) XOR (02•CD) XOR (03•24) = 3E
+ s'[3][1] = (03•CE) XOR (01•1D) XOR (01•CD) XOR (02•24) = D1
+
+Cột 2:
+ s'[0][2] = (02•0B) XOR (03•92) XOR (01•20) XOR (01•F0) = 6B
+ s'[1][2] = (01•0B) XOR (02•92) XOR (03•20) XOR (01•F0) = A4
+ s'[2][2] = (01•0B) XOR (01•92) XOR (02•20) XOR (03•F0) = D2
+ s'[3][2] = (03•0B) XOR (01•92) XOR (01•20) XOR (02•F0) = 54
+
+Cột 3:
+ s'[0][3] = (02•99) XOR (03•46) XOR (01•A8) XOR (01•F5) = BE
+ s'[1][3] = (01•99) XOR (02•46) XOR (03•A8) XOR (01•F5) = 03
+ s'[2][3] = (01•99) XOR (01•46) XOR (02•A8) XOR (03•F5) = 90
+ s'[3][3] = (03•99) XOR (01•46) XOR (01•A8) XOR (02•F5) = AF
+
+Sau MixColumns:
+╔════════════════════════╗
+║ E9 49 6B BE ║
+║ 19 9C A4 03 ║
+║ 4A 3E D2 90 ║
+║ 5C D1 54 AF ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (5) --
+Khóa vòng:
+╔════════════════════════╗
+║ EA 28 CB 6E ║
+║ 58 39 AE 8C ║
+║ 93 3F 27 54 ║
+║ 32 B8 21 26 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: E9⊕EA=03, 49⊕28=61, 6B⊕CB=A0, BE⊕6E=D0
+• Hàng 1: 19⊕58=41, 9C⊕39=A5, A4⊕AE=0A, 03⊕8C=8F
+• Hàng 2: 4A⊕93=D9, 3E⊕3F=01, D2⊕27=F5, 90⊕54=C4
+• Hàng 3: 5C⊕32=6E, D1⊕B8=69, 54⊕21=75, AF⊕26=89
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 03 61 A0 D0 ║
+║ 41 A5 0A 8F ║
+║ D9 01 F5 C4 ║
+║ 6E 69 75 89 ║
+╚════════════════════════╝
+
+--- Vòng 6 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 03 -> SBox = 7B
+state[0,1] 61 -> SBox = EF
+state[0,2] A0 -> SBox = E0
+state[0,3] D0 -> SBox = 70
+state[1,0] 41 -> SBox = 83
+state[1,1] A5 -> SBox = 06
+state[1,2] 0A -> SBox = 67
+state[1,3] 8F -> SBox = 73
+state[2,0] D9 -> SBox = 35
+state[2,1] 01 -> SBox = 7C
+state[2,2] F5 -> SBox = E6
+state[2,3] C4 -> SBox = 1C
+state[3,0] 6E -> SBox = 9F
+state[3,1] 69 -> SBox = F9
+state[3,2] 75 -> SBox = 9D
+state[3,3] 89 -> SBox = A7
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 7B EF E0 70 ║
+║ 83 06 67 73 ║
+║ 35 7C E6 1C ║
+║ 9F F9 9D A7 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 7B EF E0 70 ║
+║ 06 67 73 83 ║
+║ E6 1C 35 7C ║
+║ A7 9F F9 9D ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•7B) XOR (03•06) XOR (01•E6) XOR (01•A7) = BD
+ s'[1][0] = (01•7B) XOR (02•06) XOR (03•E6) XOR (01•A7) = E1
+ s'[2][0] = (01•7B) XOR (01•06) XOR (02•E6) XOR (03•A7) = 58
+ s'[3][0] = (03•7B) XOR (01•06) XOR (01•E6) XOR (02•A7) = 38
+
+Cột 1:
+ s'[0][1] = (02•EF) XOR (03•67) XOR (01•1C) XOR (01•9F) = EF
+ s'[1][1] = (01•EF) XOR (02•67) XOR (03•1C) XOR (01•9F) = 9A
+ s'[2][1] = (01•EF) XOR (01•67) XOR (02•1C) XOR (03•9F) = 0A
+ s'[3][1] = (03•EF) XOR (01•67) XOR (01•1C) XOR (02•9F) = 74
+
+Cột 2:
+ s'[0][2] = (02•E0) XOR (03•73) XOR (01•35) XOR (01•F9) = 82
+ s'[1][2] = (01•E0) XOR (02•73) XOR (03•35) XOR (01•F9) = A0
+ s'[2][2] = (01•E0) XOR (01•73) XOR (02•35) XOR (03•F9) = E9
+ s'[3][2] = (03•E0) XOR (01•73) XOR (01•35) XOR (02•F9) = 94
+
+Cột 3:
+ s'[0][3] = (02•70) XOR (03•83) XOR (01•7C) XOR (01•9D) = 9F
+ s'[1][3] = (01•70) XOR (02•83) XOR (03•7C) XOR (01•9D) = 74
+ s'[2][3] = (01•70) XOR (01•83) XOR (02•7C) XOR (03•9D) = B7
+ s'[3][3] = (03•70) XOR (01•83) XOR (01•7C) XOR (02•9D) = 4E
+
+Sau MixColumns:
+╔════════════════════════╗
+║ BD EF 82 9F ║
+║ E1 9A A0 74 ║
+║ 58 0A E9 B7 ║
+║ 38 74 94 4E ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (6) --
+Khóa vòng:
+╔════════════════════════╗
+║ AE 86 4D 23 ║
+║ C7 FE 50 DC ║
+║ 64 5B 7C 28 ║
+║ 12 AA 8B AD ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: BD⊕AE=13, EF⊕86=69, 82⊕4D=CF, 9F⊕23=BC
+• Hàng 1: E1⊕C7=26, 9A⊕FE=64, A0⊕50=F0, 74⊕DC=A8
+• Hàng 2: 58⊕64=3C, 0A⊕5B=51, E9⊕7C=95, B7⊕28=9F
+• Hàng 3: 38⊕12=2A, 74⊕AA=DE, 94⊕8B=1F, 4E⊕AD=E3
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 13 69 CF BC ║
+║ 26 64 F0 A8 ║
+║ 3C 51 95 9F ║
+║ 2A DE 1F E3 ║
+╚════════════════════════╝
+
+--- Vòng 7 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 13 -> SBox = 7D
+state[0,1] 69 -> SBox = F9
+state[0,2] CF -> SBox = 8A
+state[0,3] BC -> SBox = 65
+state[1,0] 26 -> SBox = F7
+state[1,1] 64 -> SBox = 43
+state[1,2] F0 -> SBox = 8C
+state[1,3] A8 -> SBox = C2
+state[2,0] 3C -> SBox = EB
+state[2,1] 51 -> SBox = D1
+state[2,2] 95 -> SBox = 2A
+state[2,3] 9F -> SBox = DB
+state[3,0] 2A -> SBox = E5
+state[3,1] DE -> SBox = 1D
+state[3,2] 1F -> SBox = C0
+state[3,3] E3 -> SBox = 11
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 7D F9 8A 65 ║
+║ F7 43 8C C2 ║
+║ EB D1 2A DB ║
+║ E5 1D C0 11 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 7D F9 8A 65 ║
+║ 43 8C C2 F7 ║
+║ 2A DB EB D1 ║
+║ 11 E5 1D C0 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•7D) XOR (03•43) XOR (01•2A) XOR (01•11) = 04
+ s'[1][0] = (01•7D) XOR (02•43) XOR (03•2A) XOR (01•11) = 94
+ s'[2][0] = (01•7D) XOR (01•43) XOR (02•2A) XOR (03•11) = 59
+ s'[3][0] = (03•7D) XOR (01•43) XOR (01•2A) XOR (02•11) = CC
+
+Cột 1:
+ s'[0][1] = (02•F9) XOR (03•8C) XOR (01•DB) XOR (01•E5) = 58
+ s'[1][1] = (01•F9) XOR (02•8C) XOR (03•DB) XOR (01•E5) = 69
+ s'[2][1] = (01•F9) XOR (01•8C) XOR (02•DB) XOR (03•E5) = EC
+ s'[3][1] = (03•F9) XOR (01•8C) XOR (01•DB) XOR (02•E5) = 96
+
+Cột 2:
+ s'[0][2] = (02•8A) XOR (03•C2) XOR (01•EB) XOR (01•1D) = A4
+ s'[1][2] = (01•8A) XOR (02•C2) XOR (03•EB) XOR (01•1D) = 2E
+ s'[2][2] = (01•8A) XOR (01•C2) XOR (02•EB) XOR (03•1D) = A2
+ s'[3][2] = (03•8A) XOR (01•C2) XOR (01•EB) XOR (02•1D) = 96
+
+Cột 3:
+ s'[0][3] = (02•65) XOR (03•F7) XOR (01•D1) XOR (01•C0) = D9
+ s'[1][3] = (01•65) XOR (02•F7) XOR (03•D1) XOR (01•C0) = 38
+ s'[2][3] = (01•65) XOR (01•F7) XOR (02•D1) XOR (03•C0) = 70
+ s'[3][3] = (03•65) XOR (01•F7) XOR (01•D1) XOR (02•C0) = 12
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 04 58 A4 D9 ║
+║ 94 69 2E 38 ║
+║ 59 EC A2 70 ║
+║ CC 96 96 12 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (7) --
+Khóa vòng:
+╔════════════════════════╗
+║ 68 EE A3 80 ║
+║ E1 1F 4F 93 ║
+║ F1 AA D6 FE ║
+║ 26 8C 07 AA ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 04⊕68=6C, 58⊕EE=B6, A4⊕A3=07, D9⊕80=59
+• Hàng 1: 94⊕E1=75, 69⊕1F=76, 2E⊕4F=61, 38⊕93=AB
+• Hàng 2: 59⊕F1=A8, EC⊕AA=46, A2⊕D6=74, 70⊕FE=8E
+• Hàng 3: CC⊕26=EA, 96⊕8C=1A, 96⊕07=91, 12⊕AA=B8
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 6C B6 07 59 ║
+║ 75 76 61 AB ║
+║ A8 46 74 8E ║
+║ EA 1A 91 B8 ║
+╚════════════════════════╝
+
+--- Vòng 8 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 6C -> SBox = 50
+state[0,1] B6 -> SBox = 4E
+state[0,2] 07 -> SBox = C5
+state[0,3] 59 -> SBox = CB
+state[1,0] 75 -> SBox = 9D
+state[1,1] 76 -> SBox = 38
+state[1,2] 61 -> SBox = EF
+state[1,3] AB -> SBox = 62
+state[2,0] A8 -> SBox = C2
+state[2,1] 46 -> SBox = 5A
+state[2,2] 74 -> SBox = 92
+state[2,3] 8E -> SBox = 19
+state[3,0] EA -> SBox = 87
+state[3,1] 1A -> SBox = A2
+state[3,2] 91 -> SBox = 81
+state[3,3] B8 -> SBox = 6C
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 50 4E C5 CB ║
+║ 9D 38 EF 62 ║
+║ C2 5A 92 19 ║
+║ 87 A2 81 6C ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 50 4E C5 CB ║
+║ 38 EF 62 9D ║
+║ 92 19 C2 5A ║
+║ 6C 87 A2 81 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•50) XOR (03•38) XOR (01•92) XOR (01•6C) = 16
+ s'[1][0] = (01•50) XOR (02•38) XOR (03•92) XOR (01•6C) = E1
+ s'[2][0] = (01•50) XOR (01•38) XOR (02•92) XOR (03•6C) = E3
+ s'[3][0] = (03•50) XOR (01•38) XOR (01•92) XOR (02•6C) = 82
+
+Cột 1:
+ s'[0][1] = (02•4E) XOR (03•EF) XOR (01•19) XOR (01•87) = 28
+ s'[1][1] = (01•4E) XOR (02•EF) XOR (03•19) XOR (01•87) = 27
+ s'[2][1] = (01•4E) XOR (01•EF) XOR (02•19) XOR (03•87) = 01
+ s'[3][1] = (03•4E) XOR (01•EF) XOR (01•19) XOR (02•87) = 31
+
+Cột 2:
+ s'[0][2] = (02•C5) XOR (03•62) XOR (01•C2) XOR (01•A2) = 57
+ s'[1][2] = (01•C5) XOR (02•62) XOR (03•C2) XOR (01•A2) = FE
+ s'[2][2] = (01•C5) XOR (01•62) XOR (02•C2) XOR (03•A2) = C5
+ s'[3][2] = (03•C5) XOR (01•62) XOR (01•C2) XOR (02•A2) = AB
+
+Cột 3:
+ s'[0][3] = (02•CB) XOR (03•9D) XOR (01•5A) XOR (01•81) = EA
+ s'[1][3] = (01•CB) XOR (02•9D) XOR (03•5A) XOR (01•81) = 85
+ s'[2][3] = (01•CB) XOR (01•9D) XOR (02•5A) XOR (03•81) = 7A
+ s'[3][3] = (03•CB) XOR (01•9D) XOR (01•5A) XOR (02•81) = 98
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 16 28 57 EA ║
+║ E1 27 FE 85 ║
+║ E3 01 C5 7A ║
+║ 82 31 AB 98 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (8) --
+Khóa vòng:
+╔════════════════════════╗
+║ 34 DA 79 F9 ║
+║ 2C 33 7C EF ║
+║ 5D F7 21 DF ║
+║ 9D 11 16 BC ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 16⊕34=22, 28⊕DA=F2, 57⊕79=2E, EA⊕F9=13
+• Hàng 1: E1⊕2C=CD, 27⊕33=14, FE⊕7C=82, 85⊕EF=6A
+• Hàng 2: E3⊕5D=BE, 01⊕F7=F6, C5⊕21=E4, 7A⊕DF=A5
+• Hàng 3: 82⊕9D=1F, 31⊕11=20, AB⊕16=BD, 98⊕BC=24
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 22 F2 2E 13 ║
+║ CD 14 82 6A ║
+║ BE F6 E4 A5 ║
+║ 1F 20 BD 24 ║
+╚════════════════════════╝
+
+--- Vòng 9 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 22 -> SBox = 93
+state[0,1] F2 -> SBox = 89
+state[0,2] 2E -> SBox = 31
+state[0,3] 13 -> SBox = 7D
+state[1,0] CD -> SBox = BD
+state[1,1] 14 -> SBox = FA
+state[1,2] 82 -> SBox = 13
+state[1,3] 6A -> SBox = 02
+state[2,0] BE -> SBox = AE
+state[2,1] F6 -> SBox = 42
+state[2,2] E4 -> SBox = 69
+state[2,3] A5 -> SBox = 06
+state[3,0] 1F -> SBox = C0
+state[3,1] 20 -> SBox = B7
+state[3,2] BD -> SBox = 7A
+state[3,3] 24 -> SBox = 36
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 93 89 31 7D ║
+║ BD FA 13 02 ║
+║ AE 42 69 06 ║
+║ C0 B7 7A 36 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 93 89 31 7D ║
+║ FA 13 02 BD ║
+║ 69 06 AE 42 ║
+║ 36 C0 B7 7A ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•93) XOR (03•FA) XOR (01•69) XOR (01•36) = 77
+ s'[1][0] = (01•93) XOR (02•FA) XOR (03•69) XOR (01•36) = F1
+ s'[2][0] = (01•93) XOR (01•FA) XOR (02•69) XOR (03•36) = E1
+ s'[3][0] = (03•93) XOR (01•FA) XOR (01•69) XOR (02•36) = 51
+
+Cột 1:
+ s'[0][1] = (02•89) XOR (03•13) XOR (01•06) XOR (01•C0) = FA
+ s'[1][1] = (01•89) XOR (02•13) XOR (03•06) XOR (01•C0) = 65
+ s'[2][1] = (01•89) XOR (01•13) XOR (02•06) XOR (03•C0) = CD
+ s'[3][1] = (03•89) XOR (01•13) XOR (01•06) XOR (02•C0) = 0E
+
+Cột 2:
+ s'[0][2] = (02•31) XOR (03•02) XOR (01•AE) XOR (01•B7) = 7D
+ s'[1][2] = (01•31) XOR (02•02) XOR (03•AE) XOR (01•B7) = 6B
+ s'[2][2] = (01•31) XOR (01•02) XOR (02•AE) XOR (03•B7) = B6
+ s'[3][2] = (03•31) XOR (01•02) XOR (01•AE) XOR (02•B7) = 8A
+
+Cột 3:
+ s'[0][3] = (02•7D) XOR (03•BD) XOR (01•42) XOR (01•7A) = 1E
+ s'[1][3] = (01•7D) XOR (02•BD) XOR (03•42) XOR (01•7A) = A0
+ s'[2][3] = (01•7D) XOR (01•BD) XOR (02•42) XOR (03•7A) = CA
+ s'[3][3] = (03•7D) XOR (01•BD) XOR (01•42) XOR (02•7A) = 8C
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 77 FA 7D 1E ║
+║ F1 65 6B A0 ║
+║ E1 CD B6 CA ║
+║ 51 0E 8A 8C ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (9) --
+Khóa vòng:
+╔════════════════════════╗
+║ F0 2A 53 AA ║
+║ B5 86 FA 15 ║
+║ 38 CF EE 31 ║
+║ 03 12 04 B8 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 77⊕F0=87, FA⊕2A=D0, 7D⊕53=2E, 1E⊕AA=B4
+• Hàng 1: F1⊕B5=44, 65⊕86=E3, 6B⊕FA=91, A0⊕15=B5
+• Hàng 2: E1⊕38=D9, CD⊕CF=02, B6⊕EE=58, CA⊕31=FB
+• Hàng 3: 51⊕03=52, 0E⊕12=1C, 8A⊕04=8E, 8C⊕B8=34
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 87 D0 2E B4 ║
+║ 44 E3 91 B5 ║
+║ D9 02 58 FB ║
+║ 52 1C 8E 34 ║
+╚════════════════════════╝
+
+--- Vòng 10 (cuối) ---
+-- Thay thế byte (SubBytes, cuối) --
+state[0,0] 87 -> SBox = 17
+state[0,1] D0 -> SBox = 70
+state[0,2] 2E -> SBox = 31
+state[0,3] B4 -> SBox = 8D
+state[1,0] 44 -> SBox = 1B
+state[1,1] E3 -> SBox = 11
+state[1,2] 91 -> SBox = 81
+state[1,3] B5 -> SBox = D5
+state[2,0] D9 -> SBox = 35
+state[2,1] 02 -> SBox = 77
+state[2,2] 58 -> SBox = 6A
+state[2,3] FB -> SBox = 0F
+state[3,0] 52 -> SBox = 00
+state[3,1] 1C -> SBox = 9C
+state[3,2] 8E -> SBox = 19
+state[3,3] 34 -> SBox = 18
+Kết quả sau SubBytes (cuối):
+╔════════════════════════╗
+║ 17 70 31 8D ║
+║ 1B 11 81 D5 ║
+║ 35 77 6A 0F ║
+║ 00 9C 19 18 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows, cuối) --
+Kết quả sau ShiftRows (cuối):
+╔════════════════════════╗
+║ 17 70 31 8D ║
+║ 11 81 D5 1B ║
+║ 6A 0F 35 77 ║
+║ 18 00 9C 19 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (10) (cuối) --
+Khóa vòng:
+╔════════════════════════╗
+║ 9F B5 E6 4C ║
+║ 19 9F 65 70 ║
+║ 54 9B 75 44 ║
+║ C4 D6 D2 6A ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ ShiftRows:
+• Hàng 0: 17⊕9F=88, 70⊕B5=C5, 31⊕E6=D7, 8D⊕4C=C1
+• Hàng 1: 11⊕19=08, 81⊕9F=1E, D5⊕65=B0, 1B⊕70=6B
+• Hàng 2: 6A⊕54=3E, 0F⊕9B=94, 35⊕75=40, 77⊕44=33
+• Hàng 3: 18⊕C4=DC, 00⊕D6=D6, 9C⊕D2=4E, 19⊕6A=73
+
+Kết quả sau AddRoundKey (cuối):
+╔════════════════════════╗
+║ 88 C5 D7 C1 ║
+║ 08 1E B0 6B ║
+║ 3E 94 40 33 ║
+║ DC D6 4E 73 ║
+╚════════════════════════╝
+
+Kết quả sau khi mã hóa khối 0:
+╔════════════════════════╗
+║ 88 C5 D7 C1 ║
+║ 08 1E B0 6B ║
+║ 3E 94 40 33 ║
+║ DC D6 4E 73 ║
+╚════════════════════════╝
+
+
+==================== KHỐI 1 ====================
+Dữ liệu khối 1 (hex): D9 78 78 78 78 78 78 78 78 78 78 78 78 78 78 78
+Trạng thái bản rõ:
+╔════════════════════════╗
+║ D9 78 78 78 ║
+║ 78 78 78 78 ║
+║ 78 78 78 78 ║
+║ 78 78 78 78 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (0) --
+Khóa vòng:
+╔════════════════════════╗
+║ 6B 63 20 78 ║
+║ 68 6E 48 78 ║
+║ 6F 74 4E 78 ║
+║ 61 74 78 78 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state ban đầu:
+• Hàng 0: D9⊕6B=B2, 78⊕63=1B, 78⊕20=58, 78⊕78=00
+• Hàng 1: 78⊕68=10, 78⊕6E=16, 78⊕48=30, 78⊕78=00
+• Hàng 2: 78⊕6F=17, 78⊕74=0C, 78⊕4E=36, 78⊕78=00
+• Hàng 3: 78⊕61=19, 78⊕74=0C, 78⊕78=00, 78⊕78=00
+
+Kết quả sau Cộng Khóa Vòng (0):
+╔════════════════════════╗
+║ B2 1B 58 00 ║
+║ 10 16 30 00 ║
+║ 17 0C 36 00 ║
+║ 19 0C 00 00 ║
+╚════════════════════════╝
+
+--- Vòng 1 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] B2 -> SBox = 37
+state[0,1] 1B -> SBox = AF
+state[0,2] 58 -> SBox = 6A
+state[0,3] 00 -> SBox = 63
+state[1,0] 10 -> SBox = CA
+state[1,1] 16 -> SBox = 47
+state[1,2] 30 -> SBox = 04
+state[1,3] 00 -> SBox = 63
+state[2,0] 17 -> SBox = F0
+state[2,1] 0C -> SBox = FE
+state[2,2] 36 -> SBox = 05
+state[2,3] 00 -> SBox = 63
+state[3,0] 19 -> SBox = D4
+state[3,1] 0C -> SBox = FE
+state[3,2] 00 -> SBox = 63
+state[3,3] 00 -> SBox = 63
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 37 AF 6A 63 ║
+║ CA 47 04 63 ║
+║ F0 FE 05 63 ║
+║ D4 FE 63 63 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 37 AF 6A 63 ║
+║ 47 04 63 CA ║
+║ 05 63 F0 FE ║
+║ 63 D4 FE 63 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•37) XOR (03•47) XOR (01•05) XOR (01•63) = C1
+ s'[1][0] = (01•37) XOR (02•47) XOR (03•05) XOR (01•63) = D5
+ s'[2][0] = (01•37) XOR (01•47) XOR (02•05) XOR (03•63) = DF
+ s'[3][0] = (03•37) XOR (01•47) XOR (01•05) XOR (02•63) = DD
+
+Cột 1:
+ s'[0][1] = (02•AF) XOR (03•04) XOR (01•63) XOR (01•D4) = FE
+ s'[1][1] = (01•AF) XOR (02•04) XOR (03•63) XOR (01•D4) = D6
+ s'[2][1] = (01•AF) XOR (01•04) XOR (02•63) XOR (03•D4) = 0A
+ s'[3][1] = (03•AF) XOR (01•04) XOR (01•63) XOR (02•D4) = 3E
+
+Cột 2:
+ s'[0][2] = (02•6A) XOR (03•63) XOR (01•F0) XOR (01•FE) = 7F
+ s'[1][2] = (01•6A) XOR (02•63) XOR (03•F0) XOR (01•FE) = 59
+ s'[2][2] = (01•6A) XOR (01•63) XOR (02•F0) XOR (03•FE) = EB
+ s'[3][2] = (03•6A) XOR (01•63) XOR (01•F0) XOR (02•FE) = CA
+
+Cột 3:
+ s'[0][3] = (02•63) XOR (03•CA) XOR (01•FE) XOR (01•63) = 1E
+ s'[1][3] = (01•63) XOR (02•CA) XOR (03•FE) XOR (01•63) = 96
+ s'[2][3] = (01•63) XOR (01•CA) XOR (02•FE) XOR (03•63) = EB
+ s'[3][3] = (03•63) XOR (01•CA) XOR (01•FE) XOR (02•63) = 57
+
+Sau MixColumns:
+╔════════════════════════╗
+║ C1 FE 7F 1E ║
+║ D5 D6 59 96 ║
+║ DF 0A EB EB ║
+║ DD 3E CA 57 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (1) --
+Khóa vòng:
+╔════════════════════════╗
+║ D6 B5 95 ED ║
+║ D4 BA F2 8A ║
+║ D3 A7 E9 91 ║
+║ DD A9 D1 A9 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: C1⊕D6=17, FE⊕B5=4B, 7F⊕95=EA, 1E⊕ED=F3
+• Hàng 1: D5⊕D4=01, D6⊕BA=6C, 59⊕F2=AB, 96⊕8A=1C
+• Hàng 2: DF⊕D3=0C, 0A⊕A7=AD, EB⊕E9=02, EB⊕91=7A
+• Hàng 3: DD⊕DD=00, 3E⊕A9=97, CA⊕D1=1B, 57⊕A9=FE
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 17 4B EA F3 ║
+║ 01 6C AB 1C ║
+║ 0C AD 02 7A ║
+║ 00 97 1B FE ║
+╚════════════════════════╝
+
+--- Vòng 2 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 17 -> SBox = F0
+state[0,1] 4B -> SBox = B3
+state[0,2] EA -> SBox = 87
+state[0,3] F3 -> SBox = 0D
+state[1,0] 01 -> SBox = 7C
+state[1,1] 6C -> SBox = 50
+state[1,2] AB -> SBox = 62
+state[1,3] 1C -> SBox = 9C
+state[2,0] 0C -> SBox = FE
+state[2,1] AD -> SBox = 95
+state[2,2] 02 -> SBox = 77
+state[2,3] 7A -> SBox = DA
+state[3,0] 00 -> SBox = 63
+state[3,1] 97 -> SBox = 88
+state[3,2] 1B -> SBox = AF
+state[3,3] FE -> SBox = BB
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ F0 B3 87 0D ║
+║ 7C 50 62 9C ║
+║ FE 95 77 DA ║
+║ 63 88 AF BB ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ F0 B3 87 0D ║
+║ 50 62 9C 7C ║
+║ 77 DA FE 95 ║
+║ BB 63 88 AF ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•F0) XOR (03•50) XOR (01•77) XOR (01•BB) = C7
+ s'[1][0] = (01•F0) XOR (02•50) XOR (03•77) XOR (01•BB) = 72
+ s'[2][0] = (01•F0) XOR (01•50) XOR (02•77) XOR (03•BB) = 98
+ s'[3][0] = (03•F0) XOR (01•50) XOR (01•77) XOR (02•BB) = 41
+
+Cột 1:
+ s'[0][1] = (02•B3) XOR (03•62) XOR (01•DA) XOR (01•63) = 62
+ s'[1][1] = (01•B3) XOR (02•62) XOR (03•DA) XOR (01•63) = 61
+ s'[2][1] = (01•B3) XOR (01•62) XOR (02•DA) XOR (03•63) = DB
+ s'[3][1] = (03•B3) XOR (01•62) XOR (01•DA) XOR (02•63) = B0
+
+Cột 2:
+ s'[0][2] = (02•87) XOR (03•9C) XOR (01•FE) XOR (01•88) = DC
+ s'[1][2] = (01•87) XOR (02•9C) XOR (03•FE) XOR (01•88) = 35
+ s'[2][2] = (01•87) XOR (01•9C) XOR (02•FE) XOR (03•88) = 7F
+ s'[3][2] = (03•87) XOR (01•9C) XOR (01•FE) XOR (02•88) = FB
+
+Cột 3:
+ s'[0][3] = (02•0D) XOR (03•7C) XOR (01•95) XOR (01•AF) = A4
+ s'[1][3] = (01•0D) XOR (02•7C) XOR (03•95) XOR (01•AF) = FE
+ s'[2][3] = (01•0D) XOR (01•7C) XOR (02•95) XOR (03•AF) = AA
+ s'[3][3] = (03•0D) XOR (01•7C) XOR (01•95) XOR (02•AF) = BB
+
+Sau MixColumns:
+╔════════════════════════╗
+║ C7 62 DC A4 ║
+║ 72 61 35 FE ║
+║ 98 DB 7F AA ║
+║ 41 B0 FB BB ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (2) --
+Khóa vòng:
+╔════════════════════════╗
+║ AA 1F 8A 67 ║
+║ 81 3B C9 43 ║
+║ 00 A7 4E DF ║
+║ 5C F5 24 8D ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: C7⊕AA=6D, 62⊕1F=7D, DC⊕8A=56, A4⊕67=C3
+• Hàng 1: 72⊕81=F3, 61⊕3B=5A, 35⊕C9=FC, FE⊕43=BD
+• Hàng 2: 98⊕00=98, DB⊕A7=7C, 7F⊕4E=31, AA⊕DF=75
+• Hàng 3: 41⊕5C=1D, B0⊕F5=45, FB⊕24=DF, BB⊕8D=36
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 6D 7D 56 C3 ║
+║ F3 5A FC BD ║
+║ 98 7C 31 75 ║
+║ 1D 45 DF 36 ║
+╚════════════════════════╝
+
+--- Vòng 3 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 6D -> SBox = 3C
+state[0,1] 7D -> SBox = FF
+state[0,2] 56 -> SBox = B1
+state[0,3] C3 -> SBox = 2E
+state[1,0] F3 -> SBox = 0D
+state[1,1] 5A -> SBox = BE
+state[1,2] FC -> SBox = B0
+state[1,3] BD -> SBox = 7A
+state[2,0] 98 -> SBox = 46
+state[2,1] 7C -> SBox = 10
+state[2,2] 31 -> SBox = C7
+state[2,3] 75 -> SBox = 9D
+state[3,0] 1D -> SBox = A4
+state[3,1] 45 -> SBox = 6E
+state[3,2] DF -> SBox = 9E
+state[3,3] 36 -> SBox = 05
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 3C FF B1 2E ║
+║ 0D BE B0 7A ║
+║ 46 10 C7 9D ║
+║ A4 6E 9E 05 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 3C FF B1 2E ║
+║ BE B0 7A 0D ║
+║ C7 9D 46 10 ║
+║ 05 A4 6E 9E ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•3C) XOR (03•BE) XOR (01•C7) XOR (01•05) = 63
+ s'[1][0] = (01•3C) XOR (02•BE) XOR (03•C7) XOR (01•05) = 0C
+ s'[2][0] = (01•3C) XOR (01•BE) XOR (02•C7) XOR (03•05) = 18
+ s'[3][0] = (03•3C) XOR (01•BE) XOR (01•C7) XOR (02•05) = 37
+
+Cột 1:
+ s'[0][1] = (02•FF) XOR (03•B0) XOR (01•9D) XOR (01•A4) = 17
+ s'[1][1] = (01•FF) XOR (02•B0) XOR (03•9D) XOR (01•A4) = 9C
+ s'[2][1] = (01•FF) XOR (01•B0) XOR (02•9D) XOR (03•A4) = 99
+ s'[3][1] = (03•FF) XOR (01•B0) XOR (01•9D) XOR (02•A4) = 64
+
+Cột 2:
+ s'[0][2] = (02•B1) XOR (03•7A) XOR (01•46) XOR (01•6E) = DF
+ s'[1][2] = (01•B1) XOR (02•7A) XOR (03•46) XOR (01•6E) = E1
+ s'[2][2] = (01•B1) XOR (01•7A) XOR (02•46) XOR (03•6E) = F5
+ s'[3][2] = (03•B1) XOR (01•7A) XOR (01•46) XOR (02•6E) = 28
+
+Cột 3:
+ s'[0][3] = (02•2E) XOR (03•0D) XOR (01•10) XOR (01•9E) = C5
+ s'[1][3] = (01•2E) XOR (02•0D) XOR (03•10) XOR (01•9E) = 9A
+ s'[2][3] = (01•2E) XOR (01•0D) XOR (02•10) XOR (03•9E) = BA
+ s'[3][3] = (03•2E) XOR (01•0D) XOR (01•10) XOR (02•9E) = 48
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 63 17 DF C5 ║
+║ 0C 9C E1 9A ║
+║ 18 99 F5 BA ║
+║ 37 64 28 48 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (3) --
+Khóa vòng:
+╔════════════════════════╗
+║ B4 AB 21 46 ║
+║ 04 3F F6 B5 ║
+║ 5D FA B4 6B ║
+║ C2 37 13 9E ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 63⊕B4=D7, 17⊕AB=BC, DF⊕21=FE, C5⊕46=83
+• Hàng 1: 0C⊕04=08, 9C⊕3F=A3, E1⊕F6=17, 9A⊕B5=2F
+• Hàng 2: 18⊕5D=45, 99⊕FA=63, F5⊕B4=41, BA⊕6B=D1
+• Hàng 3: 37⊕C2=F5, 64⊕37=53, 28⊕13=3B, 48⊕9E=D6
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ D7 BC FE 83 ║
+║ 08 A3 17 2F ║
+║ 45 63 41 D1 ║
+║ F5 53 3B D6 ║
+╚════════════════════════╝
+
+--- Vòng 4 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] D7 -> SBox = 0E
+state[0,1] BC -> SBox = 65
+state[0,2] FE -> SBox = BB
+state[0,3] 83 -> SBox = EC
+state[1,0] 08 -> SBox = 30
+state[1,1] A3 -> SBox = 0A
+state[1,2] 17 -> SBox = F0
+state[1,3] 2F -> SBox = 15
+state[2,0] 45 -> SBox = 6E
+state[2,1] 63 -> SBox = FB
+state[2,2] 41 -> SBox = 83
+state[2,3] D1 -> SBox = 3E
+state[3,0] F5 -> SBox = E6
+state[3,1] 53 -> SBox = ED
+state[3,2] 3B -> SBox = E2
+state[3,3] D6 -> SBox = F6
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 0E 65 BB EC ║
+║ 30 0A F0 15 ║
+║ 6E FB 83 3E ║
+║ E6 ED E2 F6 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 0E 65 BB EC ║
+║ 0A F0 15 30 ║
+║ 83 3E 6E FB ║
+║ F6 E6 ED E2 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•0E) XOR (03•0A) XOR (01•83) XOR (01•F6) = 77
+ s'[1][0] = (01•0E) XOR (02•0A) XOR (03•83) XOR (01•F6) = 72
+ s'[2][0] = (01•0E) XOR (01•0A) XOR (02•83) XOR (03•F6) = 18
+ s'[3][0] = (03•0E) XOR (01•0A) XOR (01•83) XOR (02•F6) = 6C
+
+Cột 1:
+ s'[0][1] = (02•65) XOR (03•F0) XOR (01•3E) XOR (01•E6) = 19
+ s'[1][1] = (01•65) XOR (02•F0) XOR (03•3E) XOR (01•E6) = 3A
+ s'[2][1] = (01•65) XOR (01•F0) XOR (02•3E) XOR (03•E6) = D8
+ s'[3][1] = (03•65) XOR (01•F0) XOR (01•3E) XOR (02•E6) = B6
+
+Cột 2:
+ s'[0][2] = (02•BB) XOR (03•15) XOR (01•6E) XOR (01•ED) = D1
+ s'[1][2] = (01•BB) XOR (02•15) XOR (03•6E) XOR (01•ED) = CE
+ s'[2][2] = (01•BB) XOR (01•15) XOR (02•6E) XOR (03•ED) = 5E
+ s'[3][2] = (03•BB) XOR (01•15) XOR (01•6E) XOR (02•ED) = 6C
+
+Cột 3:
+ s'[0][3] = (02•EC) XOR (03•30) XOR (01•FB) XOR (01•E2) = 8A
+ s'[1][3] = (01•EC) XOR (02•30) XOR (03•FB) XOR (01•E2) = 78
+ s'[2][3] = (01•EC) XOR (01•30) XOR (02•FB) XOR (03•E2) = 0C
+ s'[3][3] = (03•EC) XOR (01•30) XOR (01•FB) XOR (02•E2) = 3B
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 77 19 D1 8A ║
+║ 72 3A CE 78 ║
+║ 18 D8 5E 0C ║
+║ 6C B6 6C 3B ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (4) --
+Khóa vòng:
+╔════════════════════════╗
+║ 69 C2 E3 A5 ║
+║ 5E 61 97 22 ║
+║ 56 AC 18 73 ║
+║ BD 8A 99 07 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 77⊕69=1E, 19⊕C2=DB, D1⊕E3=32, 8A⊕A5=2F
+• Hàng 1: 72⊕5E=2C, 3A⊕61=5B, CE⊕97=59, 78⊕22=5A
+• Hàng 2: 18⊕56=4E, D8⊕AC=74, 5E⊕18=46, 0C⊕73=7F
+• Hàng 3: 6C⊕BD=D1, B6⊕8A=3C, 6C⊕99=F5, 3B⊕07=3C
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 1E DB 32 2F ║
+║ 2C 5B 59 5A ║
+║ 4E 74 46 7F ║
+║ D1 3C F5 3C ║
+╚════════════════════════╝
+
+--- Vòng 5 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 1E -> SBox = 72
+state[0,1] DB -> SBox = B9
+state[0,2] 32 -> SBox = 23
+state[0,3] 2F -> SBox = 15
+state[1,0] 2C -> SBox = 71
+state[1,1] 5B -> SBox = 39
+state[1,2] 59 -> SBox = CB
+state[1,3] 5A -> SBox = BE
+state[2,0] 4E -> SBox = 2F
+state[2,1] 74 -> SBox = 92
+state[2,2] 46 -> SBox = 5A
+state[2,3] 7F -> SBox = D2
+state[3,0] D1 -> SBox = 3E
+state[3,1] 3C -> SBox = EB
+state[3,2] F5 -> SBox = E6
+state[3,3] 3C -> SBox = EB
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 72 B9 23 15 ║
+║ 71 39 CB BE ║
+║ 2F 92 5A D2 ║
+║ 3E EB E6 EB ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 72 B9 23 15 ║
+║ 39 CB BE 71 ║
+║ 5A D2 2F 92 ║
+║ EB 3E EB E6 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•72) XOR (03•39) XOR (01•5A) XOR (01•EB) = 1E
+ s'[1][0] = (01•72) XOR (02•39) XOR (03•5A) XOR (01•EB) = 05
+ s'[2][0] = (01•72) XOR (01•39) XOR (02•5A) XOR (03•EB) = D9
+ s'[3][0] = (03•72) XOR (01•39) XOR (01•5A) XOR (02•EB) = 38
+
+Cột 1:
+ s'[0][1] = (02•B9) XOR (03•CB) XOR (01•D2) XOR (01•3E) = C3
+ s'[1][1] = (01•B9) XOR (02•CB) XOR (03•D2) XOR (01•3E) = 67
+ s'[2][1] = (01•B9) XOR (01•CB) XOR (02•D2) XOR (03•3E) = 8F
+ s'[3][1] = (03•B9) XOR (01•CB) XOR (01•D2) XOR (02•3E) = B5
+
+Cột 2:
+ s'[0][2] = (02•23) XOR (03•BE) XOR (01•2F) XOR (01•EB) = 5B
+ s'[1][2] = (01•23) XOR (02•BE) XOR (03•2F) XOR (01•EB) = DE
+ s'[2][2] = (01•23) XOR (01•BE) XOR (02•2F) XOR (03•EB) = E5
+ s'[3][2] = (03•23) XOR (01•BE) XOR (01•2F) XOR (02•EB) = 39
+
+Cột 3:
+ s'[0][3] = (02•15) XOR (03•71) XOR (01•92) XOR (01•E6) = CD
+ s'[1][3] = (01•15) XOR (02•71) XOR (03•92) XOR (01•E6) = BC
+ s'[2][3] = (01•15) XOR (01•71) XOR (02•92) XOR (03•E6) = 6A
+ s'[3][3] = (03•15) XOR (01•71) XOR (01•92) XOR (02•E6) = 0B
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 1E C3 5B CD ║
+║ 05 67 DE BC ║
+║ D9 8F E5 6A ║
+║ 38 B5 39 0B ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (5) --
+Khóa vòng:
+╔════════════════════════╗
+║ EA 28 CB 6E ║
+║ 58 39 AE 8C ║
+║ 93 3F 27 54 ║
+║ 32 B8 21 26 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 1E⊕EA=F4, C3⊕28=EB, 5B⊕CB=90, CD⊕6E=A3
+• Hàng 1: 05⊕58=5D, 67⊕39=5E, DE⊕AE=70, BC⊕8C=30
+• Hàng 2: D9⊕93=4A, 8F⊕3F=B0, E5⊕27=C2, 6A⊕54=3E
+• Hàng 3: 38⊕32=0A, B5⊕B8=0D, 39⊕21=18, 0B⊕26=2D
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ F4 EB 90 A3 ║
+║ 5D 5E 70 30 ║
+║ 4A B0 C2 3E ║
+║ 0A 0D 18 2D ║
+╚════════════════════════╝
+
+--- Vòng 6 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] F4 -> SBox = BF
+state[0,1] EB -> SBox = E9
+state[0,2] 90 -> SBox = 60
+state[0,3] A3 -> SBox = 0A
+state[1,0] 5D -> SBox = 4C
+state[1,1] 5E -> SBox = 58
+state[1,2] 70 -> SBox = 51
+state[1,3] 30 -> SBox = 04
+state[2,0] 4A -> SBox = D6
+state[2,1] B0 -> SBox = E7
+state[2,2] C2 -> SBox = 25
+state[2,3] 3E -> SBox = B2
+state[3,0] 0A -> SBox = 67
+state[3,1] 0D -> SBox = D7
+state[3,2] 18 -> SBox = AD
+state[3,3] 2D -> SBox = D8
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ BF E9 60 0A ║
+║ 4C 58 51 04 ║
+║ D6 E7 25 B2 ║
+║ 67 D7 AD D8 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ BF E9 60 0A ║
+║ 58 51 04 4C ║
+║ 25 B2 D6 E7 ║
+║ D8 67 D7 AD ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•BF) XOR (03•58) XOR (01•25) XOR (01•D8) = 70
+ s'[1][0] = (01•BF) XOR (02•58) XOR (03•25) XOR (01•D8) = B8
+ s'[2][0] = (01•BF) XOR (01•58) XOR (02•25) XOR (03•D8) = DE
+ s'[3][0] = (03•BF) XOR (01•58) XOR (01•25) XOR (02•D8) = 0C
+
+Cột 1:
+ s'[0][1] = (02•E9) XOR (03•51) XOR (01•B2) XOR (01•67) = EF
+ s'[1][1] = (01•E9) XOR (02•51) XOR (03•B2) XOR (01•67) = E1
+ s'[2][1] = (01•E9) XOR (01•51) XOR (02•B2) XOR (03•67) = 6E
+ s'[3][1] = (03•E9) XOR (01•51) XOR (01•B2) XOR (02•67) = 0D
+
+Cột 2:
+ s'[0][2] = (02•60) XOR (03•04) XOR (01•D6) XOR (01•D7) = CD
+ s'[1][2] = (01•60) XOR (02•04) XOR (03•D6) XOR (01•D7) = DE
+ s'[2][2] = (01•60) XOR (01•04) XOR (02•D6) XOR (03•D7) = B1
+ s'[3][2] = (03•60) XOR (01•04) XOR (01•D6) XOR (02•D7) = C7
+
+Cột 3:
+ s'[0][3] = (02•0A) XOR (03•4C) XOR (01•E7) XOR (01•AD) = 8A
+ s'[1][3] = (01•0A) XOR (02•4C) XOR (03•E7) XOR (01•AD) = 0D
+ s'[2][3] = (01•0A) XOR (01•4C) XOR (02•E7) XOR (03•AD) = 7F
+ s'[3][3] = (03•0A) XOR (01•4C) XOR (01•E7) XOR (02•AD) = F4
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 70 EF CD 8A ║
+║ B8 E1 DE 0D ║
+║ DE 6E B1 7F ║
+║ 0C 0D C7 F4 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (6) --
+Khóa vòng:
+╔════════════════════════╗
+║ AE 86 4D 23 ║
+║ C7 FE 50 DC ║
+║ 64 5B 7C 28 ║
+║ 12 AA 8B AD ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 70⊕AE=DE, EF⊕86=69, CD⊕4D=80, 8A⊕23=A9
+• Hàng 1: B8⊕C7=7F, E1⊕FE=1F, DE⊕50=8E, 0D⊕DC=D1
+• Hàng 2: DE⊕64=BA, 6E⊕5B=35, B1⊕7C=CD, 7F⊕28=57
+• Hàng 3: 0C⊕12=1E, 0D⊕AA=A7, C7⊕8B=4C, F4⊕AD=59
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ DE 69 80 A9 ║
+║ 7F 1F 8E D1 ║
+║ BA 35 CD 57 ║
+║ 1E A7 4C 59 ║
+╚════════════════════════╝
+
+--- Vòng 7 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] DE -> SBox = 1D
+state[0,1] 69 -> SBox = F9
+state[0,2] 80 -> SBox = CD
+state[0,3] A9 -> SBox = D3
+state[1,0] 7F -> SBox = D2
+state[1,1] 1F -> SBox = C0
+state[1,2] 8E -> SBox = 19
+state[1,3] D1 -> SBox = 3E
+state[2,0] BA -> SBox = F4
+state[2,1] 35 -> SBox = 96
+state[2,2] CD -> SBox = BD
+state[2,3] 57 -> SBox = 5B
+state[3,0] 1E -> SBox = 72
+state[3,1] A7 -> SBox = 5C
+state[3,2] 4C -> SBox = 29
+state[3,3] 59 -> SBox = CB
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 1D F9 CD D3 ║
+║ D2 C0 19 3E ║
+║ F4 96 BD 5B ║
+║ 72 5C 29 CB ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 1D F9 CD D3 ║
+║ C0 19 3E D2 ║
+║ BD 5B F4 96 ║
+║ CB 72 5C 29 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•1D) XOR (03•C0) XOR (01•BD) XOR (01•CB) = 17
+ s'[1][0] = (01•1D) XOR (02•C0) XOR (03•BD) XOR (01•CB) = 91
+ s'[2][0] = (01•1D) XOR (01•C0) XOR (02•BD) XOR (03•CB) = FA
+ s'[3][0] = (03•1D) XOR (01•C0) XOR (01•BD) XOR (02•CB) = D7
+
+Cột 1:
+ s'[0][1] = (02•F9) XOR (03•19) XOR (01•5B) XOR (01•72) = EB
+ s'[1][1] = (01•F9) XOR (02•19) XOR (03•5B) XOR (01•72) = 54
+ s'[2][1] = (01•F9) XOR (01•19) XOR (02•5B) XOR (03•72) = C0
+ s'[3][1] = (03•F9) XOR (01•19) XOR (01•5B) XOR (02•72) = B6
+
+Cột 2:
+ s'[0][2] = (02•CD) XOR (03•3E) XOR (01•F4) XOR (01•5C) = 6B
+ s'[1][2] = (01•CD) XOR (02•3E) XOR (03•F4) XOR (01•5C) = EA
+ s'[2][2] = (01•CD) XOR (01•3E) XOR (02•F4) XOR (03•5C) = E4
+ s'[3][2] = (03•CD) XOR (01•3E) XOR (01•F4) XOR (02•5C) = 3E
+
+Cột 3:
+ s'[0][3] = (02•D3) XOR (03•D2) XOR (01•96) XOR (01•29) = 6F
+ s'[1][3] = (01•D3) XOR (02•D2) XOR (03•96) XOR (01•29) = E4
+ s'[2][3] = (01•D3) XOR (01•D2) XOR (02•96) XOR (03•29) = 4D
+ s'[3][3] = (03•D3) XOR (01•D2) XOR (01•96) XOR (02•29) = 78
+
+Sau MixColumns:
+╔════════════════════════╗
+║ 17 EB 6B 6F ║
+║ 91 54 EA E4 ║
+║ FA C0 E4 4D ║
+║ D7 B6 3E 78 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (7) --
+Khóa vòng:
+╔════════════════════════╗
+║ 68 EE A3 80 ║
+║ E1 1F 4F 93 ║
+║ F1 AA D6 FE ║
+║ 26 8C 07 AA ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: 17⊕68=7F, EB⊕EE=05, 6B⊕A3=C8, 6F⊕80=EF
+• Hàng 1: 91⊕E1=70, 54⊕1F=4B, EA⊕4F=A5, E4⊕93=77
+• Hàng 2: FA⊕F1=0B, C0⊕AA=6A, E4⊕D6=32, 4D⊕FE=B3
+• Hàng 3: D7⊕26=F1, B6⊕8C=3A, 3E⊕07=39, 78⊕AA=D2
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 7F 05 C8 EF ║
+║ 70 4B A5 77 ║
+║ 0B 6A 32 B3 ║
+║ F1 3A 39 D2 ║
+╚════════════════════════╝
+
+--- Vòng 8 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] 7F -> SBox = D2
+state[0,1] 05 -> SBox = 6B
+state[0,2] C8 -> SBox = E8
+state[0,3] EF -> SBox = DF
+state[1,0] 70 -> SBox = 51
+state[1,1] 4B -> SBox = B3
+state[1,2] A5 -> SBox = 06
+state[1,3] 77 -> SBox = F5
+state[2,0] 0B -> SBox = 2B
+state[2,1] 6A -> SBox = 02
+state[2,2] 32 -> SBox = 23
+state[2,3] B3 -> SBox = 6D
+state[3,0] F1 -> SBox = A1
+state[3,1] 3A -> SBox = 80
+state[3,2] 39 -> SBox = 12
+state[3,3] D2 -> SBox = B5
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ D2 6B E8 DF ║
+║ 51 B3 06 F5 ║
+║ 2B 02 23 6D ║
+║ A1 80 12 B5 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ D2 6B E8 DF ║
+║ B3 06 F5 51 ║
+║ 23 6D 2B 02 ║
+║ B5 A1 80 12 ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•D2) XOR (03•B3) XOR (01•23) XOR (01•B5) = E7
+ s'[1][0] = (01•D2) XOR (02•B3) XOR (03•23) XOR (01•B5) = 7F
+ s'[2][0] = (01•D2) XOR (01•B3) XOR (02•23) XOR (03•B5) = E3
+ s'[3][0] = (03•D2) XOR (01•B3) XOR (01•23) XOR (02•B5) = 8C
+
+Cột 1:
+ s'[0][1] = (02•6B) XOR (03•06) XOR (01•6D) XOR (01•A1) = 10
+ s'[1][1] = (01•6B) XOR (02•06) XOR (03•6D) XOR (01•A1) = 71
+ s'[2][1] = (01•6B) XOR (01•06) XOR (02•6D) XOR (03•A1) = 4F
+ s'[3][1] = (03•6B) XOR (01•06) XOR (01•6D) XOR (02•A1) = 8F
+
+Cột 2:
+ s'[0][2] = (02•E8) XOR (03•F5) XOR (01•2B) XOR (01•80) = 64
+ s'[1][2] = (01•E8) XOR (02•F5) XOR (03•2B) XOR (01•80) = E4
+ s'[2][2] = (01•E8) XOR (01•F5) XOR (02•2B) XOR (03•80) = D0
+ s'[3][2] = (03•E8) XOR (01•F5) XOR (01•2B) XOR (02•80) = E6
+
+Cột 3:
+ s'[0][3] = (02•DF) XOR (03•51) XOR (01•02) XOR (01•12) = 46
+ s'[1][3] = (01•DF) XOR (02•51) XOR (03•02) XOR (01•12) = 69
+ s'[2][3] = (01•DF) XOR (01•51) XOR (02•02) XOR (03•12) = BC
+ s'[3][3] = (03•DF) XOR (01•51) XOR (01•02) XOR (02•12) = 0D
+
+Sau MixColumns:
+╔════════════════════════╗
+║ E7 10 64 46 ║
+║ 7F 71 E4 69 ║
+║ E3 4F D0 BC ║
+║ 8C 8F E6 0D ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (8) --
+Khóa vòng:
+╔════════════════════════╗
+║ 34 DA 79 F9 ║
+║ 2C 33 7C EF ║
+║ 5D F7 21 DF ║
+║ 9D 11 16 BC ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: E7⊕34=D3, 10⊕DA=CA, 64⊕79=1D, 46⊕F9=BF
+• Hàng 1: 7F⊕2C=53, 71⊕33=42, E4⊕7C=98, 69⊕EF=86
+• Hàng 2: E3⊕5D=BE, 4F⊕F7=B8, D0⊕21=F1, BC⊕DF=63
+• Hàng 3: 8C⊕9D=11, 8F⊕11=9E, E6⊕16=F0, 0D⊕BC=B1
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ D3 CA 1D BF ║
+║ 53 42 98 86 ║
+║ BE B8 F1 63 ║
+║ 11 9E F0 B1 ║
+╚════════════════════════╝
+
+--- Vòng 9 ---
+-- Thay thế byte (SubBytes) --
+state[0,0] D3 -> SBox = 66
+state[0,1] CA -> SBox = 74
+state[0,2] 1D -> SBox = A4
+state[0,3] BF -> SBox = 08
+state[1,0] 53 -> SBox = ED
+state[1,1] 42 -> SBox = 2C
+state[1,2] 98 -> SBox = 46
+state[1,3] 86 -> SBox = 44
+state[2,0] BE -> SBox = AE
+state[2,1] B8 -> SBox = 6C
+state[2,2] F1 -> SBox = A1
+state[2,3] 63 -> SBox = FB
+state[3,0] 11 -> SBox = 82
+state[3,1] 9E -> SBox = 0B
+state[3,2] F0 -> SBox = 8C
+state[3,3] B1 -> SBox = C8
+Kết quả sau SubBytes:
+╔════════════════════════╗
+║ 66 74 A4 08 ║
+║ ED 2C 46 44 ║
+║ AE 6C A1 FB ║
+║ 82 0B 8C C8 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows) --
+Kết quả sau ShiftRows:
+╔════════════════════════╗
+║ 66 74 A4 08 ║
+║ 2C 46 44 ED ║
+║ A1 FB AE 6C ║
+║ C8 82 0B 8C ║
+╚════════════════════════╝
+
+>>> MixColumns <<<
+Công thức: Nhân ma trận state với ma trận cố định trong GF(2^8)
+Ma trận MixColumns:
+┌ ┐
+│ 02 03 01 01 │
+│ 01 02 03 01 │
+│ 01 01 02 03 │
+│ 03 01 01 02 │
+└ ┘
+
+Cột 0:
+ s'[0][0] = (02•66) XOR (03•2C) XOR (01•A1) XOR (01•C8) = D1
+ s'[1][0] = (01•66) XOR (02•2C) XOR (03•A1) XOR (01•C8) = 0E
+ s'[2][0] = (01•66) XOR (01•2C) XOR (02•A1) XOR (03•C8) = 50
+ s'[3][0] = (03•66) XOR (01•2C) XOR (01•A1) XOR (02•C8) = AC
+
+Cột 1:
+ s'[0][1] = (02•74) XOR (03•46) XOR (01•FB) XOR (01•82) = 5B
+ s'[1][1] = (01•74) XOR (02•46) XOR (03•FB) XOR (01•82) = 6C
+ s'[2][1] = (01•74) XOR (01•46) XOR (02•FB) XOR (03•82) = 42
+ s'[3][1] = (03•74) XOR (01•46) XOR (01•FB) XOR (02•82) = 3E
+
+Cột 2:
+ s'[0][2] = (02•A4) XOR (03•44) XOR (01•AE) XOR (01•0B) = 3A
+ s'[1][2] = (01•A4) XOR (02•44) XOR (03•AE) XOR (01•0B) = CE
+ s'[2][2] = (01•A4) XOR (01•44) XOR (02•AE) XOR (03•0B) = BA
+ s'[3][2] = (03•A4) XOR (01•44) XOR (01•AE) XOR (02•0B) = 0B
+
+Cột 3:
+ s'[0][3] = (02•08) XOR (03•ED) XOR (01•6C) XOR (01•8C) = DC
+ s'[1][3] = (01•08) XOR (02•ED) XOR (03•6C) XOR (01•8C) = F1
+ s'[2][3] = (01•08) XOR (01•ED) XOR (02•6C) XOR (03•8C) = B2
+ s'[3][3] = (03•08) XOR (01•ED) XOR (01•6C) XOR (02•8C) = 9A
+
+Sau MixColumns:
+╔════════════════════════╗
+║ D1 5B 3A DC ║
+║ 0E 6C CE F1 ║
+║ 50 42 BA B2 ║
+║ AC 3E 0B 9A ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (9) --
+Khóa vòng:
+╔════════════════════════╗
+║ F0 2A 53 AA ║
+║ B5 86 FA 15 ║
+║ 38 CF EE 31 ║
+║ 03 12 04 B8 ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ MixColumns:
+• Hàng 0: D1⊕F0=21, 5B⊕2A=71, 3A⊕53=69, DC⊕AA=76
+• Hàng 1: 0E⊕B5=BB, 6C⊕86=EA, CE⊕FA=34, F1⊕15=E4
+• Hàng 2: 50⊕38=68, 42⊕CF=8D, BA⊕EE=54, B2⊕31=83
+• Hàng 3: AC⊕03=AF, 3E⊕12=2C, 0B⊕04=0F, 9A⊕B8=22
+
+Kết quả sau AddRoundKey:
+╔════════════════════════╗
+║ 21 71 69 76 ║
+║ BB EA 34 E4 ║
+║ 68 8D 54 83 ║
+║ AF 2C 0F 22 ║
+╚════════════════════════╝
+
+--- Vòng 10 (cuối) ---
+-- Thay thế byte (SubBytes, cuối) --
+state[0,0] 21 -> SBox = FD
+state[0,1] 71 -> SBox = A3
+state[0,2] 69 -> SBox = F9
+state[0,3] 76 -> SBox = 38
+state[1,0] BB -> SBox = EA
+state[1,1] EA -> SBox = 87
+state[1,2] 34 -> SBox = 18
+state[1,3] E4 -> SBox = 69
+state[2,0] 68 -> SBox = 45
+state[2,1] 8D -> SBox = 5D
+state[2,2] 54 -> SBox = 20
+state[2,3] 83 -> SBox = EC
+state[3,0] AF -> SBox = 79
+state[3,1] 2C -> SBox = 71
+state[3,2] 0F -> SBox = 76
+state[3,3] 22 -> SBox = 93
+Kết quả sau SubBytes (cuối):
+╔════════════════════════╗
+║ FD A3 F9 38 ║
+║ EA 87 18 69 ║
+║ 45 5D 20 EC ║
+║ 79 71 76 93 ║
+╚════════════════════════╝
+
+-- Dịch hàng (ShiftRows, cuối) --
+Kết quả sau ShiftRows (cuối):
+╔════════════════════════╗
+║ FD A3 F9 38 ║
+║ 87 18 69 EA ║
+║ 20 EC 45 5D ║
+║ 93 79 71 76 ║
+╚════════════════════════╝
+
+-- Cộng Khóa Vòng (10) (cuối) --
+Khóa vòng:
+╔════════════════════════╗
+║ 9F B5 E6 4C ║
+║ 19 9F 65 70 ║
+║ 54 9B 75 44 ║
+║ C4 D6 D2 6A ║
+╚════════════════════════╝
+
+Thực hiện XOR với state từ ShiftRows:
+• Hàng 0: FD⊕9F=62, A3⊕B5=16, F9⊕E6=1F, 38⊕4C=74
+• Hàng 1: 87⊕19=9E, 18⊕9F=87, 69⊕65=0C, EA⊕70=9A
+• Hàng 2: 20⊕54=74, EC⊕9B=77, 45⊕75=30, 5D⊕44=19
+• Hàng 3: 93⊕C4=57, 79⊕D6=AF, 71⊕D2=A3, 76⊕6A=1C
+
+Kết quả sau AddRoundKey (cuối):
+╔════════════════════════╗
+║ 62 16 1F 74 ║
+║ 9E 87 0C 9A ║
+║ 74 77 30 19 ║
+║ 57 AF A3 1C ║
+╚════════════════════════╝
+
+Kết quả sau khi mã hóa khối 1:
+╔════════════════════════╗
+║ 62 16 1F 74 ║
+║ 9E 87 0C 9A ║
+║ 74 77 30 19 ║
+║ 57 AF A3 1C ║
+╚════════════════════════╝
+
+
+====================Bản mã hoá================
+Mã đoạn 1: 88 08 3E DC C5 1E 94 D6 D7 B0 40 4E C1 6B 33 73
+Mã đoạn 2: 62 9E 74 57 16 87 77 AF 1F 0C 30 A3 74 9A 19 1C
+
+Bản mã hoá (hex): 88 08 3E DC C5 1E 94 D6 D7 B0 40 4E C1 6B 33 73 62 9E 74 57 16 87 77 AF 1F 0C 30 A3 74 9A 19 1C
+Bản mã hoá (text): Èiậ6œEỈ01ỬắễîưZỷờỒỹỏwÉÀỪFmWỚỹÕzC

@@ -11,7 +11,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Collections.Generic; // Thêm namespace này
+using System.Collections.Generic;
+using DESApp.Data;
 
 namespace DESApp
 {
@@ -51,6 +52,8 @@ namespace DESApp
             AES192_Radio.Checked += AlgoRadio_Checked;
             AES256_Radio.Checked += AlgoRadio_Checked;
             DES_Radio.Checked += AlgoRadio_Checked;
+
+            BenchmarkDatabase.Init();
         }
 
         private void UpdateKeyHint()
@@ -320,34 +323,26 @@ namespace DESApp
                 _ => 32
             };
 
-            // Chuyển keyText thành bytes
-            byte[] keyBytes = Encoding.UTF8.GetBytes(keyText);
+            var encoder = Encoding.UTF8;
+            var keyBytes = new List<byte>();
 
-            // Xử lý padding/cắt cho đúng độ dài
-            byte[] result = new byte[requiredLength];
-            byte paddingByte = (byte)'.'; // Padding character
+            foreach (char c in keyText)
+            {
+                byte[] charBytes = encoder.GetBytes(c.ToString());
 
-            if (keyBytes.Length < requiredLength)
-            {
-                // Copy và padding
-                Buffer.BlockCopy(keyBytes, 0, result, 0, keyBytes.Length);
-                for (int i = keyBytes.Length; i < requiredLength; i++)
-                {
-                    result[i] = paddingByte;
-                }
-            }
-            else if (keyBytes.Length > requiredLength)
-            {
-                // Cắt bớt
-                Buffer.BlockCopy(keyBytes, 0, result, 0, requiredLength);
-            }
-            else
-            {
-                result = keyBytes;
+                // nếu thêm vào bị vượt quá requiredLength thì dừng
+                if (keyBytes.Count + charBytes.Length > requiredLength)
+                    break;
+
+                keyBytes.AddRange(charBytes);
             }
 
-            return result;
+            while (keyBytes.Count < requiredLength)
+                keyBytes.Add((byte)'x');
+
+            return keyBytes.ToArray();
         }
+
 
         // Các method utility và UI events giữ nguyên
         private void CopyResult_Click(object sender, RoutedEventArgs e)
@@ -428,5 +423,113 @@ namespace DESApp
         {
             ((Button)sender).Background = new SolidColorBrush(Colors.Transparent);
         }
+
+        private void OnDrawChartClick(object sender, RoutedEventArgs e)
+        {
+            DrawChart();
+        }
+
+        private void DrawChart()
+        {
+            try
+            {
+                var plt = aesPlot.Plot;
+                plt.Clear();
+
+                var data = BenchmarkDatabase.GetAll()
+                           .Where(x => x.Algorithm == "AES-128" && x.Operation == "Encrypt")
+                           .OrderBy(x => x.DataSize)
+                           .ToList();
+
+                if (data.Count > 0)
+                {
+                    double[] xs = data.Select(d => (double)d.DataSize).ToArray();
+                    double[] ys = data.Select(d => d.TimeMs).ToArray();
+
+                    // Scatter plot
+                    var scatter = plt.AddScatter(xs, ys);
+                    scatter.Color = ScottPlot.Drawing.Colors.FromHex("#6366F1");
+                    scatter.LineWidth = 2;
+                    scatter.MarkerSize = 8;
+                    scatter.MarkerShape = ScottPlot.MarkerShape.filledCircle;
+                    scatter.LegendText = "AES-128 Encrypt";
+
+                    // Titles
+                    plt.Title("AES-128 Encryption Performance");
+                    plt.XLabel("Data Size (bytes)");
+                    plt.YLabel($"Time (ms)\n({data.Count} data points)");
+
+                    // Axis limits
+                    plt.SetAxisLimits(
+                        xs.Min() * 0.9,
+                        xs.Max() * 1.1,
+                        0,
+                        ys.Max() * 1.1
+                    );
+
+                    // Grid (ScottPlot 4)
+                    plt.Grid(enable: true, lineStyle: ScottPlot.LineStyle.Dot);
+
+                    // Stats
+                    double avg = ys.Average();
+                    double max = ys.Max();
+                    double min = ys.Min();
+
+                    // Annotation
+                    var ann = plt.AddAnnotation(
+                        $"Avg: {avg:F2} ms\nMax: {max:F2} ms\nMin: {min:F2} ms",
+                        xs.Average(),
+                        ys.Max() * 0.9
+                    );
+
+                    ann.Font.Size = 12;
+                    ann.Font.Color = System.Drawing.Color.Gray;
+                    ann.BackgroundColor = System.Drawing.Color.White;
+                    ann.BorderColor = System.Drawing.Color.LightGray;
+                }
+                else
+                {
+                    // Sample data
+                    double[] xs = { 100, 200, 500, 1000, 2000 };
+                    double[] ys = { 5, 8, 15, 25, 45 };
+
+                    var scatter = plt.AddScatter(xs, ys);
+                    scatter.Color = ScottPlot.Drawing.Colors.FromHex("#6366F1");
+                    scatter.LineWidth = 2;
+                    scatter.MarkerSize = 6;
+                    scatter.MarkerShape = ScottPlot.MarkerShape.filledCircle;
+                    scatter.LegendText = "Sample Data";
+
+                    plt.Title("AES-128 Encryption Performance (Sample Data)");
+                    plt.XLabel("Data Size (bytes)");
+                    plt.YLabel("Time (ms)");
+
+                    plt.Grid(enable: true, lineStyle: ScottPlot.LineStyle.Dot);
+
+                    var ann = plt.AddAnnotation(
+                        "No data yet.\nRun encryption to generate data.",
+                        500,
+                        30
+                    );
+
+                    ann.Font.Size = 12;
+                    ann.Font.Color = System.Drawing.Color.Red;
+                    ann.BackgroundColor = System.Drawing.Color.White;
+                    ann.BorderColor = System.Drawing.Color.Red;
+                }
+
+                aesPlot.Refresh();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error drawing chart: {ex.Message}\n\n{ex.StackTrace}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+            }
+        }
+
     }
 }

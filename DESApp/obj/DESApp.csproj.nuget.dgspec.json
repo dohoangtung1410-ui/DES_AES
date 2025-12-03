@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj": {}
+    "E:\\DES_AES\\DESApp\\DESApp.csproj": {}
   },
   "projects": {
-    "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj": {
+    "E:\\DES_AES\\DESApp\\DESApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj",
+        "projectUniqueName": "E:\\DES_AES\\DESApp\\DESApp.csproj",
         "projectName": "DESApp",
-        "projectPath": "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\CODE\\Csharp\\DESApp\\obj\\",
+        "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+        "packagesPath": "C:\\Users\\dohoa\\.nuget\\packages\\",
+        "outputPath": "E:\\DES_AES\\DESApp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\dohoa\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0-windows"
@@ -32,7 +32,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net6.0-windows7.0": {
@@ -45,6 +51,14 @@
             "ModernWpfUI": {
               "target": "Package",
               "version": "[0.9.6, )"
+            },
+            "ScottPlot.WPF": {
+              "target": "Package",
+              "version": "[5.1.57, )"
+            },
+            "System.Data.SQLite.Core": {
+              "target": "Package",
+              "version": "[1.0.119, )"
             }
           },
           "imports": [
@@ -84,7 +98,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.121\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100\\RuntimeIdentifierGraph.json"
         }
       }
     }

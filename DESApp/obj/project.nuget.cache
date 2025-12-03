@@ -1,23 +1,42 @@
 {
   "version": 2,
-  "dgSpecHash": "Fc2uL5gEVbQrXGc622UYhhOOYA3k2h4A5s0npKSqGMBFemsRPeJ0ia5txbAUdLHEUnUPNt+FLIc5OQ/298OsJA==",
+  "dgSpecHash": "vJwTvaGhIrk=",
   "success": true,
-  "projectFilePath": "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj",
+  "projectFilePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Admin\\.nuget\\packages\\commonwin32\\1.1.4.2\\commonwin32.1.1.4.2.nupkg.sha512",
-    "C:\\Users\\Admin\\.nuget\\packages\\modernwpf\\1.0.0\\modernwpf.1.0.0.nupkg.sha512",
-    "C:\\Users\\Admin\\.nuget\\packages\\modernwpfui\\0.9.6\\modernwpfui.0.9.6.nupkg.sha512",
-    "C:\\Users\\Admin\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\6.0.36\\microsoft.aspnetcore.app.ref.6.0.36.nupkg.sha512",
-    "C:\\Users\\Admin\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\6.0.36\\microsoft.netcore.app.host.win-x64.6.0.36.nupkg.sha512",
-    "C:\\Users\\Admin\\.nuget\\packages\\microsoft.netcore.app.ref\\6.0.36\\microsoft.netcore.app.ref.6.0.36.nupkg.sha512",
-    "C:\\Users\\Admin\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\6.0.36\\microsoft.windowsdesktop.app.ref.6.0.36.nupkg.sha512"
+    "C:\\Users\\dohoa\\.nuget\\packages\\commonwin32\\1.1.4.2\\commonwin32.1.1.4.2.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\harfbuzzsharp\\8.3.1.1\\harfbuzzsharp.8.3.1.1.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\harfbuzzsharp.nativeassets.linux\\8.3.1.1\\harfbuzzsharp.nativeassets.linux.8.3.1.1.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\harfbuzzsharp.nativeassets.macos\\8.3.1.1\\harfbuzzsharp.nativeassets.macos.8.3.1.1.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\harfbuzzsharp.nativeassets.win32\\8.3.1.1\\harfbuzzsharp.nativeassets.win32.8.3.1.1.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\modernwpf\\1.0.0\\modernwpf.1.0.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\modernwpfui\\0.9.6\\modernwpfui.0.9.6.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\opentk\\3.3.1\\opentk.3.3.1.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\opentk.glwpfcontrol\\3.3.0\\opentk.glwpfcontrol.3.3.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\scottplot\\5.1.57\\scottplot.5.1.57.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\scottplot.wpf\\5.1.57\\scottplot.wpf.5.1.57.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp\\3.119.0\\skiasharp.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp.harfbuzz\\3.119.0\\skiasharp.harfbuzz.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp.nativeassets.linux.nodependencies\\3.119.0\\skiasharp.nativeassets.linux.nodependencies.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp.nativeassets.macos\\3.119.0\\skiasharp.nativeassets.macos.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp.nativeassets.win32\\3.119.0\\skiasharp.nativeassets.win32.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp.views.desktop.common\\3.119.0\\skiasharp.views.desktop.common.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\skiasharp.views.wpf\\3.119.0\\skiasharp.views.wpf.3.119.0.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\stub.system.data.sqlite.core.netstandard\\1.0.119\\stub.system.data.sqlite.core.netstandard.1.0.119.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\system.data.sqlite.core\\1.0.119\\system.data.sqlite.core.1.0.119.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\6.0.36\\microsoft.aspnetcore.app.ref.6.0.36.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\6.0.36\\microsoft.netcore.app.host.win-x64.6.0.36.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\microsoft.netcore.app.ref\\6.0.36\\microsoft.netcore.app.ref.6.0.36.nupkg.sha512",
+    "C:\\Users\\dohoa\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\6.0.36\\microsoft.windowsdesktop.app.ref.6.0.36.nupkg.sha512"
   ],
   "logs": [
     {
       "code": "NU1603",
       "level": "Warning",
+      "message": "DESApp depends on ModernWPF (>= 0.9.4) but ModernWPF 0.9.4 was not found. ModernWPF 1.0.0 was resolved instead.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
       "warningLevel": 1,
-      "message": "DESApp depends on ModernWPF (>= 0.9.4) but ModernWPF 0.9.4 was not found. An approximate best match of ModernWPF 1.0.0 was resolved.",
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
       "libraryId": "ModernWPF",
       "targetGraphs": [
         "net6.0-windows7.0"
@@ -26,8 +45,10 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "warningLevel": 1,
       "message": "Package 'CommonWin32 1.1.4.2' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
       "libraryId": "CommonWin32",
       "targetGraphs": [
         "net6.0-windows7.0"
@@ -36,9 +57,59 @@
     {
       "code": "NU1701",
       "level": "Warning",
-      "warningLevel": 1,
       "message": "Package 'ModernWPF 1.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
       "libraryId": "ModernWPF",
+      "targetGraphs": [
+        "net6.0-windows7.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'OpenTK 3.3.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "libraryId": "OpenTK",
+      "targetGraphs": [
+        "net6.0-windows7.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'OpenTK.GLWpfControl 3.3.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "libraryId": "OpenTK.GLWpfControl",
+      "targetGraphs": [
+        "net6.0-windows7.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'ScottPlot.WPF 5.1.57' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "libraryId": "ScottPlot.WPF",
+      "targetGraphs": [
+        "net6.0-windows7.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'SkiaSharp.Views.WPF 3.119.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+      "libraryId": "SkiaSharp.Views.WPF",
       "targetGraphs": [
         "net6.0-windows7.0"
       ]
