@@ -231,11 +231,20 @@ namespace DESApp
                     return;
                 }
 
-                // Get plaintext
                 byte[] plaintext = encoder.GetBytes(PlainTextBox.Text);
 
                 // Build log
                 var processSb = new StringBuilder();
+
+                processSb.AppendLine("===== TIỀN XỬ LÝ DỮ LIỆU =====");
+                processSb.AppendLine($"📝 Plaintext nhập vào (Raw): {PlainTextBox.Text}");
+                processSb.AppendLine($"📝 Plaintext dạng HEX: {BitConverter.ToString(plaintext).Replace("-", " ")}");
+
+                processSb.AppendLine($"🔑 Key nhập vào (Raw): {KeyBox.Text}");
+                processSb.AppendLine($"🔑 Key dạng HEX: {BitConverter.ToString(key).Replace("-", " ")}");
+                processSb.AppendLine();
+
+
                 processSb.AppendLine($"=== QUÁ TRÌNH MÃ HÓA {algo} ===");
                 processSb.AppendLine($"Encoding: {(useUtf8 ? "UTF-8" : "ASCII")}");
                 processSb.AppendLine($"Key Length: {key.Length} bytes");
@@ -282,8 +291,20 @@ namespace DESApp
                 // Get ciphertext
                 byte[] ciphertext = Convert.FromBase64String(PlainTextBox.Text.Trim());
 
+
+
                 // Log
                 var processSb = new StringBuilder();
+
+                processSb.AppendLine("===== TIỀN XỬ LÝ DỮ LIỆU =====");
+                processSb.AppendLine($"🔐 Ciphertext nhập vào (Base64): {PlainTextBox.Text.Trim()}");
+                processSb.AppendLine($"🔐 Ciphertext dạng HEX: {BitConverter.ToString(ciphertext).Replace("-", " ")}");
+
+                processSb.AppendLine($"🔑 Key nhập vào (Raw): {KeyBox.Text}");
+                processSb.AppendLine($"🔑 Key dạng HEX: {BitConverter.ToString(key).Replace("-", " ")}");
+                processSb.AppendLine();
+
+
                 processSb.AppendLine($"=== QUÁ TRÌNH GIẢI MÃ {algo} ===");
 
                 // Decrypt
@@ -325,7 +346,7 @@ namespace DESApp
 
             // Xử lý padding/cắt cho đúng độ dài
             byte[] result = new byte[requiredLength];
-            byte paddingByte = (byte)'.'; // Padding character
+            byte paddingByte = (byte)'x'; // Padding character
 
             if (keyBytes.Length < requiredLength)
             {
@@ -428,5 +449,25 @@ namespace DESApp
         {
             ((Button)sender).Background = new SolidColorBrush(Colors.Transparent);
         }
+        private void PlainTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Tab)
+            {
+                TextBox tb = sender as TextBox;
+
+                int caretIndex = tb.CaretIndex;
+
+                // Chèn ký tự \t
+                tb.Text = tb.Text.Insert(caretIndex, "\t");
+
+                // Di chuyển caret sau dấu \t
+                tb.CaretIndex = caretIndex + 1;
+
+                // Chặn event Tab mặc định
+                e.Handled = true;
+            }
+        }
+        
+
     }
 }

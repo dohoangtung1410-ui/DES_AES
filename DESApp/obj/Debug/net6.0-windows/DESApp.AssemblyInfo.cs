@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DESApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1df00fed8cafdd5e186bf60ba65474c8a03a13b9")]
 [assembly: System.Reflection.AssemblyProductAttribute("DESApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DESApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

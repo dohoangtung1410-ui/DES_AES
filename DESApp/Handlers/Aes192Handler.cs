@@ -1,761 +1,681 @@
 using System;
 using System.Text;
 using System.Security.Cryptography;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace DESApp.Handlers
 {
-    public class Aes192Handler : IEncryptionHandler
+    public partial class Aes192Handler : IEncryptionHandler
     {
+        // ========================================================================
+        // SỬA LỖI CS0535: Bổ sung thuộc tính AlgorithmName
+        // ========================================================================
         public string AlgorithmName => "AES-192";
 
-        public string GetKeyHint() => "AES-192: 24 bytes - UTF-8/ASCII đều được, tự động padding '.' nếu thiếu";
+        // ========================================================================
+        // A. CÁC BẢNG TRA CỨU (LOOKUP TABLES)
+        // (SBOX, INV_SBOX, Rcon) -- giữ nguyên từ Aes128
+        // ========================================================================
 
-        public byte[] Encrypt(byte[] plaintext, byte[] key, Encoding encoder, StringBuilder processSb)
+        private static readonly byte[] SBOX = new byte[256] {
+            0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
+            0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
+            0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
+            0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,
+            0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,
+            0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,
+            0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,
+            0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,
+            0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
+            0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
+            0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
+            0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
+            0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
+            0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
+            0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
+            0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
+        };
+
+        private static readonly byte[] INV_SBOX = new byte[256] {
+            0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
+            0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
+            0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
+            0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25,
+            0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc, 0x5d, 0x65, 0xb6, 0x92,
+            0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda, 0x5e, 0x15, 0x46, 0x57, 0xa7, 0x8d, 0x9d, 0x84,
+            0x90, 0xd8, 0xab, 0x00, 0x8c, 0xbc, 0xd3, 0x0a, 0xf7, 0xe4, 0x58, 0x05, 0xb8, 0xb3, 0x45, 0x06,
+            0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, 0xc1, 0xaf, 0xbd, 0x03, 0x01, 0x13, 0x8a, 0x6b,
+            0x3a, 0x91, 0x11, 0x41, 0x4f, 0x67, 0xdc, 0xea, 0x97, 0xf2, 0xcf, 0xce, 0xf0, 0xb4, 0xe6, 0x73,
+            0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, 0xe2, 0xf9, 0x37, 0xe8, 0x1c, 0x75, 0xdf, 0x6e,
+            0x47, 0xf1, 0x1a, 0x71, 0x1d, 0x29, 0xc5, 0x89, 0x6f, 0xb7, 0x62, 0x0e, 0xaa, 0x18, 0xbe, 0x1b,
+            0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, 0x9a, 0xdb, 0xc0, 0xfe, 0x78, 0xcd, 0x5a, 0xf4,
+            0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f,
+            0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef,
+            0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
+            0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
+        };
+
+        private static readonly byte[] Rcon = {
+            0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36, 0x6C, 0xD8
+        };
+
+        // ========================================================================
+        // B. CÁC HÀM CỦA INTERFACE
+        // ========================================================================
+
+        public string GetKeyHint()
         {
-            var startTime = DateTime.Now;
+            return "Khóa AES-192 cần 24 bytes (24 ký tự ASCII hoặc UTF-8).";
+        }
 
-            string plaintextStr = encoder.GetString(plaintext);
-            plaintextStr = DecodeEscapedString(plaintextStr);
-            plaintext = encoder.GetBytes(plaintextStr);
-
-            processSb.AppendLine("QUÁ TRÌNH MÃ HÓA AES-192 ===");
-            processSb.AppendLine($"Encoding: {encoder.EncodingName}");
-            processSb.AppendLine($"Key Length: 24 bytes");
-            processSb.AppendLine($"=== QUÁ TRÌNH MÃ HÓA AES-192 ===");
-            processSb.AppendLine($"Encoding: {encoder.EncodingName}");
-            processSb.AppendLine($"Key Length: 24 bytes (192 bits)");
-            processSb.AppendLine($"☐ Plaintext đã nhập: {encoder.GetString(plaintext)}");
-            processSb.AppendLine($"Q Key đã nhập: {encoder.GetString(key)}");
-            processSb.AppendLine();
-
-            // ==================== Tiền xử lý bản rõ ====================
-            processSb.AppendLine("===================== TIỀN XỬ LÝ BẢN RÕ ====================");
-
-            // Chia bản rõ thành các đoạn 16 byte
-            int segmentSize = 16;
-            int segmentCount = (int)Math.Ceiling((double)plaintext.Length / segmentSize);
-
-            processSb.AppendLine("Ban ro chia lam cac doan sau:");
-            processSb.AppendLine();
-
-            List<byte[]> segments = new List<byte[]>();
-            for (int i = 0; i < segmentCount; i++)
+        public byte[] Encrypt(byte[] plaintext, byte[] key, Encoding encoder, StringBuilder sb)
+        {
+            if (key.Length != 24)
             {
-                int segmentLength = Math.Min(segmentSize, plaintext.Length - i * segmentSize);
-                byte[] segment = new byte[segmentLength];
-                Array.Copy(plaintext, i * segmentSize, segment, 0, segmentLength);
-                segments.Add(segment);
-
-                processSb.AppendLine($"Doan {i + 1}: {encoder.GetString(segment)}");
-                processSb.AppendLine($"H_doan {i + 1}: {BitConverter.ToString(segment).Replace("-", " ").ToLower()}");
-                processSb.AppendLine();
-            }
-            processSb.AppendLine();
-
-            // 1. Plaintext info
-            processSb.AppendLine("1️⃣ Plaintext → bytes:");
-            processSb.AppendLine($"   Length: {plaintext.Length} bytes");
-            processSb.AppendLine($"   Bytes (hex): {BitConverter.ToString(plaintext).Replace("-", " ")}");
-            processSb.AppendLine($"   Bytes (binary): {BytesToBinaryString(plaintext)}");
-            processSb.AppendLine();
-
-            // ==================== Tiền xử lý khóa ====================
-            processSb.AppendLine("===================== TIỀN XỬ LÝ KHÓA ====================");
-            processSb.AppendLine($"Khoá ban đầu: {encoder.GetString(key)}");
-            processSb.AppendLine($"Khoá ban đầu (hex): {BitConverter.ToString(key).Replace("-", " ")}");
-            processSb.AppendLine();
-
-            // 2. Xử lý key
-            key = HandleKeyFlexible(key, 24, encoder, processSb);
-
-            processSb.AppendLine($"Khoá sau xử lý: {encoder.GetString(key)}");
-            processSb.AppendLine($"H_khoá: {BytesToHexString(key)}");
-            processSb.AppendLine();
-
-            // ==================== Quá trình sinh khoá ====================
-            processSb.AppendLine("===================== QUÁ TRÌNH SINH KHÓA ====================");
-
-            // 3. Padding info
-            processSb.AppendLine("3️⃣ PKCS7 padding:");
-            processSb.AppendLine($"   Input length: {plaintext.Length} bytes");
-            int paddedLength = ((plaintext.Length / 16) + 1) * 16;
-            int padBytes = paddedLength - plaintext.Length;
-            processSb.AppendLine($"   Padded length: {paddedLength} bytes");
-            processSb.AppendLine($"   Pad bytes: {padBytes} bytes (value: 0x{padBytes:X2})");
-
-            // Tạo padded data
-            byte[] paddedData = new byte[paddedLength];
-            Array.Copy(plaintext, 0, paddedData, 0, plaintext.Length);
-            for (int i = plaintext.Length; i < paddedLength; i++)
-            {
-                paddedData[i] = (byte)padBytes;
-            }
-            processSb.AppendLine($"   Padded data (hex): {BitConverter.ToString(paddedData).Replace("-", " ")}");
-            processSb.AppendLine();
-
-            // 4. Chia blocks
-            int blockCount = paddedData.Length / 16;
-            processSb.AppendLine($"4️⃣ Chia bản rõ thành {blockCount} block (128-bit mỗi block)");
-            processSb.AppendLine();
-
-            // 5. Mã hóa với chi tiết từng bước
-            byte[] encryptedData = EncryptAes192StepByStep(paddedData, key, processSb);
-
-            // ==================== Bản mã hoá ====================
-            processSb.AppendLine("===================== BẢN MÃ HOÁ ====================");
-
-            // Chia bản mã thành các đoạn 16 byte tương ứng
-            List<byte[]> encryptedSegments = new List<byte[]>();
-            for (int i = 0; i < blockCount; i++)
-            {
-                byte[] encryptedSegment = new byte[16];
-                Array.Copy(encryptedData, i * 16, encryptedSegment, 0, 16);
-                encryptedSegments.Add(encryptedSegment);
-
-                processSb.AppendLine($"Mã đoạn {i + 1}: {BitConverter.ToString(encryptedSegment).Replace("-", " ")}");
-                processSb.AppendLine($"H_mã đoạn {i + 1}: {BytesToHexString(encryptedSegment)}");
-                processSb.AppendLine();
+                throw new ArgumentException($"Key AES-192 phải đúng 24 bytes. Hiện tại: {key.Length} bytes.");
             }
 
-            processSb.AppendLine($"Bản mã hoá (Base64): {Convert.ToBase64String(encryptedData)}");
-            processSb.AppendLine($"Bản mã hoá (Hex): {BytesToHexString(encryptedData)}");
-            processSb.AppendLine();
+            // Padding dữ liệu (PKCS7)
+            byte[] paddedData = PadDataPKCS7(plaintext);
 
-            var endTime = DateTime.Now;
-            var duration = (endTime - startTime).TotalMilliseconds;
+            // Sinh khóa (Key Expansion)
+            sb.AppendLine("🔑 BẮT ĐẦU SINH KHÓA VÒNG (Key Expansion) cho AES-192...");
+            byte[][] roundKeys = KeyExpansion192(key, sb);
+            sb.AppendLine("✅ Đã sinh đủ 13 Round Keys.");
 
-            processSb.AppendLine("=== KẾT THÚC MÃ HÓA AES-192 ===");
-            processSb.AppendLine($"⏱ Encryption completed in {duration}ms");
-            processSb.AppendLine();
-            processSb.AppendLine($"→ Cipher (Base64): {Convert.ToBase64String(encryptedData)}");
+            // Gọi hàm xử lý chi tiết (AES-192 với 12 rounds)
+            return EncryptAes192StepByStep(paddedData, key, roundKeys, sb);
+        }
+
+        public byte[] Decrypt(byte[] ciphertext, byte[] key, Encoding encoder, StringBuilder sb)
+        {
+            if (key.Length != 24)
+            {
+                throw new ArgumentException($"Key AES-192 phải đúng 24 bytes. Hiện tại: {key.Length} bytes.");
+            }
+
+            // Sinh khóa (Key Expansion)
+            sb.AppendLine("🔑 BẮT ĐẦU SINH KHÓA VÒNG (Key Expansion) cho AES-192...");
+            byte[][] roundKeys = KeyExpansion192(key, sb);
+
+            // Gọi hàm xử lý chi tiết
+            byte[] decryptedPadded = DecryptAes192StepByStep(ciphertext, key, roundKeys, sb);
+
+            // Gỡ Padding
+            try
+            {
+                return UnpadDataPKCS7(decryptedPadded);
+            }
+            catch
+            {
+                sb.AppendLine("⚠️ CẢNH BÁO: Lỗi Padding sau khi giải mã. Trả về dữ liệu gốc.");
+                return decryptedPadded;
+            }
+        }
+
+        // ========================================================================
+        // 1. QUÁ TRÌNH MÃ HÓA (ENCRYPT) CHO AES-192
+        // ========================================================================
+        private byte[] EncryptAes192StepByStep(byte[] paddedData, byte[] key, byte[][] roundKeys, StringBuilder sb)
+        {
+            const int Nr = 12; // AES-192
+            sb.AppendLine("====================Tiền xử bản rõ================");
+            sb.AppendLine($"Bản rõ đã đệm (Hex): {BitConverter.ToString(paddedData).Replace("-", " ")}");
+            sb.AppendLine($"Tổng kích thước: {paddedData.Length} bytes");
+            
+
+            sb.AppendLine("\n====================Tiền xử khoá================");
+            sb.AppendLine($"Khoá ban đầu (Hex): {BitConverter.ToString(key).Replace("-", " ")}");
+            sb.AppendLine($"⚡ XỬ LÝ: Sử dụng {Nr + 1} Round Keys.");
+
+            byte[] encryptedData = new byte[paddedData.Length];
+            int totalBlocks = paddedData.Length / 16;
+
+            for (int i = 0; i < paddedData.Length; i += 16)
+            {
+                int blockIndex = (i / 16) + 1;
+                byte[] block = new byte[16];
+                Array.Copy(paddedData, i, block, 0, 16);
+
+                sb.AppendLine($"\n==================== BẮT ĐẦU MÃ HÓA BLOCK {blockIndex}/{totalBlocks} ====================");
+                DrawAsciiMatrix(block, "TRẠNG THÁI ĐẦU VÀO (INPUT STATE)", sb);
+
+                // --- ROUND 0: AddRoundKey ---
+                sb.AppendLine("\n--- VÒNG 0: AddRoundKey (Cộng khóa vòng) ---");
+                DrawAsciiMatrix(roundKeys[0], "Khóa vòng 0 (Round Key 0)", sb);
+                LogXorDetails(block, roundKeys[0], sb);
+                AddRoundKey(block, roundKeys[0]);
+                DrawAsciiMatrix(block, "Kết quả sau Vòng 0", sb);
+
+                // --- ROUND 1 -> Nr-1 ---
+                for (int round = 1; round <= Nr - 1; round++)
+                {
+                    sb.AppendLine($"\n🎯 --- VÒNG {round} (STANDARD ROUND) ---");
+
+                    // 1. SubBytes
+                    sb.AppendLine($"\n-- SubBytes (Thế byte - Vòng {round}) --");
+                    SubBytes(block, sb, round);
+                    DrawAsciiMatrix(block, "Kết quả sau SubBytes", sb);
+
+                    // 2. ShiftRows
+                    sb.AppendLine($"\n-- ShiftRows (Dịch hàng - Vòng {round}) --");
+                    ShiftRows(block);
+                    DrawAsciiMatrix(block, "Kết quả sau ShiftRows", sb);
+
+                    // 3. MixColumns
+                    sb.AppendLine($"\n-- MixColumns (Trộn cột - Vòng {round}) --");
+                    MixColumns(block, sb, round);
+                    DrawAsciiMatrix(block, "Kết quả sau MixColumns", sb);
+
+                    // 4. AddRoundKey
+                    sb.AppendLine($"\n-- AddRoundKey (Cộng khóa vòng {round}) --");
+                    DrawAsciiMatrix(roundKeys[round], $"Khóa vòng {round}", sb);
+                    LogXorDetails(block, roundKeys[round], sb);
+                    AddRoundKey(block, roundKeys[round]);
+                    DrawAsciiMatrix(block, "Kết quả sau AddRoundKey", sb);
+                }
+
+                // --- FINAL ROUND (Nr): Không MixColumns ---
+                sb.AppendLine($"\n🏁 --- VÒNG {Nr} (FINAL ROUND - Không MixColumns) ---");
+
+                sb.AppendLine("\n-- SubBytes (Thế byte cuối) --");
+                SubBytes(block, sb, Nr);
+                DrawAsciiMatrix(block, "Kết quả sau SubBytes", sb);
+
+                sb.AppendLine("\n-- ShiftRows (Dịch hàng cuối) --");
+                ShiftRows(block);
+                DrawAsciiMatrix(block, "Kết quả sau ShiftRows", sb);
+
+                sb.AppendLine("\n-- AddRoundKey (Cộng khóa vòng cuối) --");
+                DrawAsciiMatrix(roundKeys[Nr], $"Khóa vòng {Nr}", sb);
+                LogXorDetails(block, roundKeys[Nr], sb);
+                AddRoundKey(block, roundKeys[Nr]);
+                DrawAsciiMatrix(block, "TRẠNG THÁI CUỐI CÙNG (CIPHERTEXT)", sb);
+
+                Array.Copy(block, 0, encryptedData, i, 16);
+            }
 
             return encryptedData;
         }
 
-        public byte[] Decrypt(byte[] ciphertext, byte[] key, Encoding encoder, StringBuilder processSb)
+        // ========================================================================
+        // 2. QUÁ TRÌNH GIẢI MÃ (DECRYPT) CHO AES-192
+        // ========================================================================
+        private byte[] DecryptAes192StepByStep(byte[] ciphertext, byte[] key, byte[][] roundKeys, StringBuilder sb)
         {
-            var startTime = DateTime.Now;
+            const int Nr = 12;
+            sb.AppendLine("\n🔓 ==================== BẮT ĐẦU GIẢI MÃ ====================");
+            byte[] decryptedData = new byte[ciphertext.Length];
 
-            processSb.AppendLine("=== QUÁ TRÌNH GIẢI MÃ AES-192 ===");
-            processSb.AppendLine($"Encoding: {encoder.EncodingName}");
-            processSb.AppendLine($"Key Length: 24 bytes (192 bits)");
-            processSb.AppendLine($"📝 Ciphertext đã nhập: {Convert.ToBase64String(ciphertext)}");
-            processSb.AppendLine($"🔑 Key đã nhập: {encoder.GetString(key)}");
-            processSb.AppendLine();
-
-            // ==================== Tiền xử lý bản mã ====================
-            processSb.AppendLine("===================== TIỀN XỬ LÝ BẢN MÃ ====================");
-
-            int blockCount = ciphertext.Length / 16;
-            processSb.AppendLine($"Bản mã chia làm đoạn sau:");
-            processSb.AppendLine();
-
-            List<byte[]> cipherSegments = new List<byte[]>();
-            for (int i = 0; i < blockCount; i++)
+            for (int i = 0; i < ciphertext.Length; i += 16)
             {
-                byte[] segment = new byte[16];
-                Array.Copy(ciphertext, i * 16, segment, 0, 16);
-                cipherSegments.Add(segment);
+                int blockIndex = (i / 16) + 1;
+                byte[] block = new byte[16];
+                Array.Copy(ciphertext, i, block, 0, 16);
 
-                // Encoding latin1 = Encoding.GetEncoding("ISO-8859-1");
-                // processSb.AppendLine($"Doan {i + 1}: {latin1.GetString(segment)}");
-                processSb.AppendLine($"H_doan {i + 1}: {BitConverter.ToString(segment).Replace("-", " ").ToLower()}");
-                processSb.AppendLine();
-            }
-            processSb.AppendLine();
+                sb.AppendLine($"\n--- 🧩 GIẢI MÃ BLOCK {blockIndex} ---");
+                DrawAsciiMatrix(block, "CIPHERTEXT ĐẦU VÀO", sb);
 
-            // 1. Ciphertext info
-            processSb.AppendLine("1️⃣ Ciphertext → bytes:");
-            processSb.AppendLine($"   Length: {ciphertext.Length} bytes");
-            processSb.AppendLine($"   Bytes (hex): {BitConverter.ToString(ciphertext).Replace("-", " ")}");
-            processSb.AppendLine($"   Bytes (binary): {BytesToBinaryString(ciphertext)}");
-            processSb.AppendLine();
+                // --- ROUND 0 (Ngược): AddRoundKey (vòng Nr) ---
+                sb.AppendLine("\n🎯 VÒNG ĐẦU TIÊN (Inverse Round 0):");
+                sb.AppendLine($"   Action: AddRoundKey (XOR với Key {Nr})");
+                DrawAsciiMatrix(roundKeys[Nr], $"Round Key {Nr}", sb);
+                LogXorDetails(block, roundKeys[Nr], sb);
+                AddRoundKey(block, roundKeys[Nr]);
+                DrawAsciiMatrix(block, "Sau AddRoundKey (Bắt đầu giải mã)", sb);
 
-            // ==================== Tiền xử lý khóa ====================
-            processSb.AppendLine("===================== TIỀN XỬ LÝ KHÓA ====================");
-            processSb.AppendLine($"Khoá ban đầu: {encoder.GetString(key)}");
-            processSb.AppendLine($"Khoá ban đầu (hex): {BitConverter.ToString(key).Replace("-", " ")}");
-            processSb.AppendLine();
-
-            // 2. Xử lý key
-            key = HandleKeyFlexible(key, 24, encoder, processSb);
-
-            processSb.AppendLine($"Khoá sau xử lý: {encoder.GetString(key)}");
-            processSb.AppendLine($"H_khoá: {BytesToHexString(key)}");
-            processSb.AppendLine();
-
-            // ==================== Quá trình sinh khoá ====================
-            processSb.AppendLine("===================== QUÁ TRÌNH SINH KHÓA ====================");
-
-            // 3. Chia blocks
-            processSb.AppendLine($"2️⃣ Chia ciphertext thành {blockCount} block (128-bit mỗi block)");
-            processSb.AppendLine();
-
-            // 4. Giải mã với chi tiết từng bước
-            byte[] decryptedData = DecryptAes192StepByStep(ciphertext, key, processSb);
-
-            // ==================== Bản rõ giải mã ====================
-            processSb.AppendLine("===================== BẢN RÕ GIẢI MÃ ====================");
-
-            // Xử lý padding và hiển thị các đoạn đã giải mã
-            byte lastByte = decryptedData[decryptedData.Length - 1];
-            int actualLength = decryptedData.Length;
-
-            if (lastByte > 0 && lastByte <= 16)
-            {
-                actualLength = decryptedData.Length - lastByte;
-            }
-
-            int decryptedSegmentCount = (int)Math.Ceiling((double)actualLength / 16);
-            processSb.AppendLine($"Bản rõ giải mã gồm {decryptedSegmentCount} đoạn:");
-            processSb.AppendLine();
-
-            for (int i = 0; i < decryptedSegmentCount; i++)
-            {
-                int segmentLength = Math.Min(16, actualLength - i * 16);
-                byte[] segment = new byte[segmentLength];
-                Array.Copy(decryptedData, i * 16, segment, 0, segmentLength);
-
-                processSb.AppendLine($"Đoạn {i + 1}: {encoder.GetString(segment)}");
-                processSb.AppendLine($"H_đoạn {i + 1}: {BytesToHexString(segment)}");
-                processSb.AppendLine();
-            }
-
-            byte[] finalPlaintext = new byte[actualLength];
-            Array.Copy(decryptedData, 0, finalPlaintext, 0, actualLength);
-
-            try
-            {
-                string decodedText = encoder.GetString(finalPlaintext);
-                processSb.AppendLine($"Bản rõ hoàn chỉnh: {decodedText}");
-            }
-            catch (Exception)
-            {
-                // Fallback to UTF-8 if there's encoding issue
-                string decodedText = Encoding.UTF8.GetString(finalPlaintext);
-                processSb.AppendLine($"Bản rõ hoàn chỉnh: {decodedText}");
-            }
-            processSb.AppendLine($"Bản rõ (Hex): {BytesToHexString(finalPlaintext)}");
-            processSb.AppendLine();
-
-            var endTime = DateTime.Now;
-            var duration = (endTime - startTime).TotalMilliseconds;
-
-            processSb.AppendLine("=== KẾT THÚC GIẢI MÃ AES-192 ===");
-            processSb.AppendLine($"⏱ Decryption completed in {duration}ms");
-            processSb.AppendLine();
-            processSb.AppendLine($"→ Plaintext: {encoder.GetString(finalPlaintext)}");
-
-            processSb.AppendLine("=== KIỂM TRA ENCODING ===");
-            try
-            {
-                string testDecode = encoder.GetString(finalPlaintext);
-                processSb.AppendLine($"✅ Encoding {encoder.EncodingName} hợp lệ");
-                processSb.AppendLine($"Kết quả: {testDecode}");
-            }
-            catch (Exception ex)
-            {
-                processSb.AppendLine($"⚠️ Lỗi encoding {encoder.EncodingName}: {ex.Message}");
-                processSb.AppendLine($"🔄 Thử sử dụng UTF-8...");
-                string utf8Decode = Encoding.UTF8.GetString(finalPlaintext);
-                processSb.AppendLine($"Kết quả UTF-8: {utf8Decode}");
-                finalPlaintext = Encoding.UTF8.GetBytes(utf8Decode); // Cập nhật lại dữ liệu
-            }
-            processSb.AppendLine();
-
-            return finalPlaintext;
-        }
-
-        private string DecodeEscapedString(string input)
-        {
-            return input
-                .Replace("\\n", "\n")
-                .Replace("\\r", "\r")
-                .Replace("\\t", "\t")
-                .Replace("\\\\", "\\")
-                .Replace("\\\"", "\"")
-                .Replace("\\'", "'");
-        }
-
-        // Thêm phương thức chuyển đổi bytes sang hex string
-        private string BytesToHexString(byte[] bytes)
-        {
-            return BitConverter.ToString(bytes).Replace("-", "").ToLower();
-        }
-
-        // Các phương thức khác giữ nguyên...
-        private byte[] EncryptAes192StepByStep(byte[] data, byte[] key, StringBuilder processSb)
-        {
-            try
-            {
-                processSb.AppendLine("5️⃣ QUÁ TRÌNH MÃ HÓA AES-192 CHI TIẾT:");
-                processSb.AppendLine($"   Số vòng (rounds): 12 + 1 vòng đầu (AddRoundKey)");
-                processSb.AppendLine();
-
-                using (var aes = Aes.Create())
+                // --- ROUND 1 -> Nr-1 (Ngược) ---
+                for (int round = Nr - 1; round >= 1; round--)
                 {
-                    aes.KeySize = 192;
-                    aes.Key = key;
-                    aes.Mode = CipherMode.ECB;
-                    aes.Padding = PaddingMode.None;
+                    sb.AppendLine($"\n🎯 VÒNG {Nr - round} (INVERSE ROUND):");
 
-                    // Hiển thị key expansion
-                    DisplayKeyExpansion(key, processSb, true);
+                    // 1. InvShiftRows
+                    sb.AppendLine("\n-- InvShiftRows (Dịch hàng ngược) --");
+                    InvShiftRows(block);
+                    DrawAsciiMatrix(block, "Sau InvShiftRows", sb);
 
-                    byte[] result = new byte[data.Length];
+                    // 2. InvSubBytes
+                    sb.AppendLine("\n-- InvSubBytes (Thế byte ngược S-Box) --");
+                    InvSubBytes(block);
+                    DrawAsciiMatrix(block, "Sau InvSubBytes", sb);
 
-                    // Xử lý từng block
-                    for (int blockIndex = 0; blockIndex < data.Length; blockIndex += 16)
-                    {
-                        byte[] block = new byte[16];
-                        Array.Copy(data, blockIndex, block, 0, 16);
+                    // 3. AddRoundKey
+                    sb.AppendLine($"\n-- AddRoundKey (Cộng khóa vòng {round}) --");
+                    DrawAsciiMatrix(roundKeys[round], $"Round Key {round}", sb);
+                    LogXorDetails(block, roundKeys[round], sb);
+                    AddRoundKey(block, roundKeys[round]);
+                    DrawAsciiMatrix(block, "Sau AddRoundKey", sb);
 
-                        processSb.AppendLine($"--- 🧩 BLOCK {blockIndex / 16 + 1} ---");
-                        processSb.AppendLine($"Input Block (hex): {BitConverter.ToString(block).Replace("-", " ")}");
-
-                        DisplayStateMatrix(block, "STATE BAN ĐẦU", processSb);
-
-                        // Mô phỏng từng vòng mã hóa
-                        SimulateEncryptionRounds(block, key, processSb);
-
-                        // Mã hóa thực tế
-                        using (var encryptor = aes.CreateEncryptor())
-                        {
-                            encryptor.TransformBlock(block, 0, 16, result, blockIndex);
-                        }
-
-                        processSb.AppendLine($"Cipher Block (hex): {BitConverter.ToString(result, blockIndex, 16).Replace("-", " ")}");
-                        DisplayStateMatrix(result.Skip(blockIndex).Take(16).ToArray(), "STATE SAU MÃ HÓA", processSb);
-                        processSb.AppendLine();
-                    }
-
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                processSb.AppendLine($"❌ Lỗi khi mã hóa AES-192: {ex.Message}");
-                throw;
-            }
-        }
-
-        private byte[] DecryptAes192StepByStep(byte[] ciphertext, byte[] key, StringBuilder processSb)
-        {
-            try
-            {
-                processSb.AppendLine("3️⃣ QUÁ TRÌNH GIẢI MÃ AES-192 CHI TIẾT:");
-                processSb.AppendLine($"   Số vòng (rounds): 12 + 1 vòng cuối (AddRoundKey)");
-                processSb.AppendLine();
-
-                using (var aes = Aes.Create())
-                {
-                    aes.KeySize = 192;
-                    aes.Key = key;
-                    aes.Mode = CipherMode.ECB;
-                    aes.Padding = PaddingMode.None;
-
-                    // Hiển thị key expansion cho giải mã
-                    DisplayKeyExpansion(key, processSb, false);
-
-                    byte[] result = new byte[ciphertext.Length];
-
-                    // Xử lý từng block
-                    for (int blockIndex = 0; blockIndex < ciphertext.Length; blockIndex += 16)
-                    {
-                        byte[] block = new byte[16];
-                        Array.Copy(ciphertext, blockIndex, block, 0, 16);
-
-                        processSb.AppendLine($"--- 🧩 BLOCK {blockIndex / 16 + 1} ---");
-                        processSb.AppendLine($"Input Cipher Block (hex): {BitConverter.ToString(block).Replace("-", " ")}");
-
-                        DisplayStateMatrix(block, "CIPHERTEXT STATE", processSb);
-
-                        // Mô phỏng từng vòng giải mã
-                        SimulateDecryptionRounds(block, key, processSb);
-
-                        // Giải mã thực tế
-                        using (var decryptor = aes.CreateDecryptor())
-                        {
-                            decryptor.TransformBlock(block, 0, 16, result, blockIndex);
-                        }
-
-                        processSb.AppendLine($"Decrypted Block (hex): {BitConverter.ToString(result, blockIndex, 16).Replace("-", " ")}");
-                        DisplayStateMatrix(result.Skip(blockIndex).Take(16).ToArray(), "STATE SAU GIẢI MÃ", processSb);
-                        processSb.AppendLine();
-                    }
-
-                    // Xử lý padding sau khi giải mã
-                    processSb.AppendLine("4️⃣ XỬ LÝ PADDING SAU GIẢI MÃ:");
-                    byte lastByte = result[result.Length - 1];
-                    if (lastByte > 0 && lastByte <= 16)
-                    {
-                        processSb.AppendLine($"   Phát hiện padding: {lastByte} bytes (value: 0x{lastByte:X2})");
-                        processSb.AppendLine($"   Dữ liệu trước khi remove padding: {BitConverter.ToString(result).Replace("-", " ")}");
-
-                        byte[] withoutPadding = new byte[result.Length - lastByte];
-                        Array.Copy(result, 0, withoutPadding, 0, withoutPadding.Length);
-
-                        processSb.AppendLine($"   Dữ liệu sau khi remove padding: {BitConverter.ToString(withoutPadding).Replace("-", " ")}");
-                        processSb.AppendLine($"   Plaintext cuối cùng: {Encoding.UTF8.GetString(withoutPadding)}");
-                        processSb.AppendLine($"   ✅ Giải mã thành công");
-
-                        result = withoutPadding;
-                    }
-                    else
-                    {
-                        processSb.AppendLine($"   Không phát hiện padding hợp lệ");
-                        processSb.AppendLine($"   Plaintext: {Encoding.UTF8.GetString(result)}");
-                        processSb.AppendLine($"   ✅ Giải mã thành công");
-                    }
-
-                    processSb.AppendLine();
-
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                processSb.AppendLine($"❌ Lỗi khi giải mã AES-192: {ex.Message}");
-                throw;
-            }
-        }
-
-        private void SimulateEncryptionRounds(byte[] block, byte[] key, StringBuilder sb)
-        {
-            sb.AppendLine("=== QUÁ TRÌNH 12 VÒNG MÃ HÓA ===");
-
-            // Vòng 0: AddRoundKey đầu tiên
-            sb.AppendLine("🎯 VÒNG 0 - Initial AddRoundKey:");
-            sb.AppendLine($"   - XOR state với Round Key 0");
-            DisplayStateMatrix(block, "TRƯỚC AddRoundKey", sb);
-            // Giả lập AddRoundKey
-            byte[] state = (byte[])block.Clone();
-            DisplayStateMatrix(state, "SAU AddRoundKey", sb);
-            sb.AppendLine();
-
-            for (int round = 1; round <= 12; round++)
-            {
-                sb.AppendLine($"🎯 VÒNG {round}:");
-
-                // SubBytes
-                sb.AppendLine($"  1. SubBytes:");
-                sb.AppendLine($"     - Thay thế từng byte qua S-box");
-                sb.AppendLine($"     - Ánh xạ phi tuyến để chống cryptanalysis");
-                SimulateSubBytes(state);
-                DisplayStateMatrix(state, "SAU SubBytes", sb);
-
-                // ShiftRows
-                sb.AppendLine($"  2. ShiftRows:");
-                sb.AppendLine($"     - Hàng 0: không dịch");
-                sb.AppendLine($"     - Hàng 1: dịch trái 1 byte");
-                sb.AppendLine($"     - Hàng 2: dịch trái 2 byte");
-                sb.AppendLine($"     - Hàng 3: dịch trái 3 byte");
-                SimulateShiftRows(state);
-                DisplayStateMatrix(state, "SAU ShiftRows", sb);
-
-                // MixColumns (trừ vòng cuối)
-                if (round < 12)
-                {
-                    sb.AppendLine($"  3. MixColumns:");
-                    sb.AppendLine($"     - Nhân ma trận với ma trận MixColumns cố định");
-                    sb.AppendLine($"     - Trộn dữ liệu giữa các cột");
-                    SimulateMixColumns(state);
-                    DisplayStateMatrix(state, "SAU MixColumns", sb);
-                }
-                else
-                {
-                    sb.AppendLine($"  3. MixColumns: BỎ QUA (vòng cuối)");
+                    // 4. InvMixColumns
+                    sb.AppendLine("\n-- InvMixColumns (Trộn cột ngược) --");
+                    InvMixColumns(block);
+                    DrawAsciiMatrix(block, "Sau InvMixColumns", sb);
                 }
 
-                // AddRoundKey
-                sb.AppendLine($"  4. AddRoundKey (Round {round}):");
-                sb.AppendLine($"     - XOR state với round key {round}");
-                sb.AppendLine($"     - Round key được sinh từ Key Expansion");
-                SimulateAddRoundKey(state, round);
-                DisplayStateMatrix(state, "SAU AddRoundKey", sb);
-                sb.AppendLine("─────────────────────────────────────────");
+                // --- ROUND CUỐI (Inverse Final Round) ---
+                sb.AppendLine("\n🏁 VÒNG CUỐI CÙNG (Inverse Final Round):");
+
+                sb.AppendLine("\n-- InvShiftRows --");
+                InvShiftRows(block);
+                DrawAsciiMatrix(block, "Sau InvShiftRows", sb);
+
+                sb.AppendLine("\n-- InvSubBytes --");
+                InvSubBytes(block);
+                DrawAsciiMatrix(block, "Sau InvSubBytes", sb);
+
+                sb.AppendLine("\n-- AddRoundKey (Key 0) --");
+                DrawAsciiMatrix(roundKeys[0], "Round Key 0", sb);
+                LogXorDetails(block, roundKeys[0], sb);
+                AddRoundKey(block, roundKeys[0]);
+
+                DrawAsciiMatrix(block, "KẾT QUẢ GIẢI MÃ (PLAINTEXT)", sb);
+                Array.Copy(block, 0, decryptedData, i, 16);
             }
+
+            return decryptedData;
         }
 
-        private void SimulateDecryptionRounds(byte[] block, byte[] key, StringBuilder sb)
+        // ========================================================================
+        // 3. HÀM HỖ TRỢ HIỂN THỊ (giữ nguyên)
+        // ========================================================================
+        private void DrawAsciiMatrix(byte[] state, string title, StringBuilder sb)
         {
-            sb.AppendLine("=== QUÁ TRÌNH 12 VÒNG GIẢI MÃ ===");
-
-            byte[] state = (byte[])block.Clone();
-
-            for (int round = 12; round >= 1; round--)
+            sb.AppendLine($"{title}:");
+            sb.AppendLine("╔════════════════════════╗");
+            for (int r = 0; r < 4; r++)
             {
-                sb.AppendLine($"🎯 VÒNG {13 - round} (Round Key {round}):");
-
-                // AddRoundKey (ngược)
-                sb.AppendLine($"  1. AddRoundKey (Round {round}):");
-                sb.AppendLine($"     - XOR state với round key {round}");
-                DisplayStateMatrix(state, "TRƯỚC AddRoundKey", sb);
-                SimulateAddRoundKey(state, round);
-                DisplayStateMatrix(state, "SAU AddRoundKey", sb);
-
-                // MixColumns (ngược - trừ vòng đầu)
-                if (round < 12)
+                sb.Append("║ ");
+                for (int c = 0; c < 4; c++)
                 {
-                    sb.AppendLine($"  2. InvMixColumns:");
-                    sb.AppendLine($"     - Nhân ma trận với ma trận InvMixColumns");
-                    sb.AppendLine($"     - Hoàn tác phép trộn cột");
-                    SimulateInvMixColumns(state);
-                    DisplayStateMatrix(state, "SAU InvMixColumns", sb);
+                    int index = r + (c * 4);
+                    sb.Append($"{state[index]:X2} ");
+                    if (c < 3) sb.Append("   ");
                 }
-                else
+                sb.AppendLine("║");
+            }
+            sb.AppendLine("╚════════════════════════╝");
+        }
+
+        private void LogXorDetails(byte[] state, byte[] key, StringBuilder sb)
+        {
+            sb.AppendLine("Thực hiện XOR với state hiện tại:");
+            for (int r = 0; r < 4; r++)
+            {
+                sb.Append($"• Hàng {r}: ");
+                string stateRowStr = "";
+                string keyRowStr = "";
+                string resultRowStr = "";
+
+                for (int c = 0; c < 4; c++)
                 {
-                    sb.AppendLine($"  2. InvMixColumns: BỎ QUA (vòng đầu giải mã)");
+                    int idx = r + (c * 4);
+                    stateRowStr += $"{state[idx]:X2} ";
+                    keyRowStr += $"{key[idx]:X2} ";
+                    byte res = (byte)(state[idx] ^ key[idx]);
+                    resultRowStr += $"{res:X2} ";
                 }
-
-                // ShiftRows (ngược)
-                sb.AppendLine($"  3. InvShiftRows:");
-                sb.AppendLine($"     - Hàng 0: không dịch");
-                sb.AppendLine($"     - Hàng 1: dịch phải 1 byte");
-                sb.AppendLine($"     - Hàng 2: dịch phải 2 byte");
-                sb.AppendLine($"     - Hàng 3: dịch phải 3 byte");
-                SimulateInvShiftRows(state);
-                DisplayStateMatrix(state, "SAU InvShiftRows", sb);
-
-                // SubBytes (ngược)
-                sb.AppendLine($"  4. InvSubBytes:");
-                sb.AppendLine($"     - Thay thế từng byte qua Inverse S-box");
-                sb.AppendLine($"     - Hoàn tác ánh xạ phi tuyến");
-                SimulateInvSubBytes(state);
-                DisplayStateMatrix(state, "SAU InvSubBytes", sb);
-
-                sb.AppendLine("─────────────────────────────────────────");
+                sb.AppendLine($"[{stateRowStr.Trim()}] ⊕ [{keyRowStr.Trim()}] = [{resultRowStr.Trim()}]");
             }
-
-            // Vòng cuối: AddRoundKey đầu tiên (ngược)
-            sb.AppendLine("🎯 VÒNG 12 - Final AddRoundKey (Round Key 0):");
-            sb.AppendLine($"   - XOR state với Round Key 0");
-            DisplayStateMatrix(state, "TRƯỚC AddRoundKey", sb);
-            SimulateAddRoundKey(state, 0);
-            DisplayStateMatrix(state, "SAU AddRoundKey", sb);
-            sb.AppendLine();
         }
 
-        private void DisplayKeyExpansion(byte[] key, StringBuilder sb, bool forEncryption)
+        // ========================================================================
+        // 4. CÁC HÀM XỬ LÝ TOÁN HỌC & LOGIC PHỤ TRỢ (giữ nguyên)
+        // ========================================================================
+
+        private byte[] PadDataPKCS7(byte[] input)
         {
-            string processType = forEncryption ? "MÃ HÓA" : "GIẢI MÃ";
-            sb.AppendLine($"🔑 KEY EXPANSION CHO {processType} - SINH 13 ROUND KEYS:");
-            sb.AppendLine("(Từ 192-bit key ban đầu sinh ra 13 round keys 128-bit)");
-            sb.AppendLine();
-
-            // Hiển thị key gốc
-            sb.AppendLine("Round Key 0 (Key gốc - 24 bytes):");
-            DisplayKeyMatrix192(key, sb);
-
-            // Mô phỏng các round keys
-            for (int i = 1; i <= 12; i++)
+            int blockSize = 16;
+            int paddingLength = blockSize - (input.Length % blockSize);
+            byte[] padded = new byte[input.Length + paddingLength];
+            Array.Copy(input, padded, input.Length);
+            for (int i = input.Length; i < padded.Length; i++)
             {
-                sb.AppendLine($"Round Key {i}:");
-                if (forEncryption)
+                padded[i] = (byte)paddingLength;
+            }
+            return padded;
+        }
+
+        private byte[] UnpadDataPKCS7(byte[] input)
+        {
+            if (input == null || input.Length == 0) return input;
+            int paddingLength = input[input.Length - 1];
+            if (paddingLength < 1 || paddingLength > 16) return input;
+
+            byte[] output = new byte[input.Length - paddingLength];
+            Array.Copy(input, output, output.Length);
+            return output;
+        }
+
+        private string FormatHex(byte b) => b.ToString("X2");
+
+        private string FormatXor4Bytes(byte[] a, int aOffset, byte[] b, int bOffset)
+        {
+            string[] pieces = new string[4];
+            for (int i = 0; i < 4; i++)
+            {
+                byte ba = a[aOffset + i];
+                byte bb = b[bOffset + i];
+                byte r = (byte)(ba ^ bb);
+                pieces[i] = $"{FormatHex(ba)}⊕{FormatHex(bb)}={FormatHex(r)}";
+            }
+            return string.Join(", ", pieces);
+        }
+
+        // KeyExpansion for AES-192
+        private byte[][] KeyExpansion192(byte[] originalKey, StringBuilder sb)
+        {
+            // AES-192: Nk = 6, Nr = 12, Nb = 4
+            const int Nk = 6;
+            const int Nb = 4;
+            const int Nr = 12;
+            const int wordCount = Nb * (Nr + 1); // 4*(12+1) = 52 words
+            const int totalBytes = wordCount * 4; // 208 bytes
+
+            byte[] w = new byte[totalBytes]; // linear storage of words (4 bytes each)
+
+            // Copy original key into w[0..(Nk*4-1)]
+            Array.Copy(originalKey, 0, w, 0, Nk * 4);
+
+            sb.AppendLine("\n--- Round 0 (Key gốc) ---");
+            for (int i = 0; i < Nk; i++)
+            {
+                sb.AppendLine($"w[{i:D2}] = {BitConverter.ToString(w, i * 4, 4).Replace("-", "")}");
+            }
+
+            byte[] temp = new byte[4];
+
+            // Generate words w[Nk] .. w[wordCount-1]
+            for (int i = Nk; i < wordCount; i++)
+            {
+                // temp = w[i-1]
+                Array.Copy(w, (i - 1) * 4, temp, 0, 4);
+                string tempStart = BitConverter.ToString(temp).Replace("-", "");
+
+                if (i % Nk == 0)
                 {
-                    sb.AppendLine($"  - Key expansion cho AES-192: 6-word processing");
-                    sb.AppendLine($"  - Sử dụng Rcon và S-box cho mỗi nhóm 6 từ");
+                    // RotWord
+                    RotWord(temp);
+                    string afterRot = BitConverter.ToString(temp).Replace("-", "");
+
+                    // SubWord
+                    SubWord(temp);
+                    string afterSub = BitConverter.ToString(temp).Replace("-", "");
+
+                    // XOR with Rcon[i/Nk]
+                    int rconIndex = i / Nk;
+                    temp[0] ^= Rcon[rconIndex];
+                    string afterRcon = BitConverter.ToString(temp).Replace("-", "");
+
+                    sb.AppendLine($"  ⚠️ Tính g(w[{i - 1:D2}]):");
+                    sb.AppendLine($"     Input (w[{i - 1:D2}]) : {tempStart}");
+                    sb.AppendLine($"     RotWord         : {afterRot}");
+                    sb.AppendLine($"     SubWord         : {afterSub}");
+                    sb.AppendLine($"     XOR Rcon[{rconIndex:D2}]    : {afterRcon}");
                 }
-                else
+                else if (Nk > 6 && (i % Nk) == 4)
                 {
-                    sb.AppendLine($"  - Sử dụng cho vòng {13 - i} trong giải mã");
+                    // For AES-256 only; not used for Nk=6 but kept for completeness
+                    SubWord(temp);
+                    sb.AppendLine($"  SubWord applied at i={i} (Nk>6 case).");
                 }
-                byte[] simulatedKey = SimulateRoundKey(key, i);
-                DisplayStateMatrix(simulatedKey, $"ROUND KEY {i} (128-bit)", sb);
-            }
-            sb.AppendLine();
-        }
 
-        // Các phương thức mô phỏng biến đổi (giống AES128)
-        private void SimulateSubBytes(byte[] state)
-        {
-            for (int i = 0; i < 16; i++)
+                // w[i] = w[i - Nk] XOR temp
+                for (int j = 0; j < 4; j++)
+                {
+                    w[i * 4 + j] = (byte)(w[(i - Nk) * 4 + j] ^ temp[j]);
+                }
+
+                // Logging (word-level)
+                string left = BitConverter.ToString(w, (i - Nk) * 4, 4).Replace("-", "");
+                string gWord = BitConverter.ToString(temp).Replace("-", "");
+                string resultWord = BitConverter.ToString(w, i * 4, 4).Replace("-", "");
+                string xorDetail = FormatXor4Bytes(w, (i - Nk) * 4, temp, 0);
+                sb.AppendLine($"  👉 w[{i:D2}] = w[{i - Nk:D2}] ⊕ g() = {resultWord}");
+                sb.AppendLine($"     Chi tiết: {left} ⊕ {gWord}");
+                sb.AppendLine($"     Byte XOR: {xorDetail}");
+            }
+
+            // Convert w (linear bytes) to roundKeys[] each 16 bytes
+            int roundKeyCount = Nr + 1; // 13
+            byte[][] roundKeys = new byte[roundKeyCount][];
+
+            for (int round = 0; round < roundKeyCount; round++)
             {
-                state[i] = (byte)(state[i] ^ 0x5A); // Giả lập đơn giản
+                roundKeys[round] = new byte[16];
+                // copy 16 bytes starting from w[round*16]
+                Array.Copy(w, round * 16, roundKeys[round], 0, 16);
+                sb.AppendLine($"✅ Round Key {round}: {BitConverter.ToString(roundKeys[round]).Replace("-", " ")}");
             }
+
+            return roundKeys;
         }
 
-        private void SimulateInvSubBytes(byte[] state)
+        private void RotWord(byte[] word)
         {
-            for (int i = 0; i < 16; i++)
-            {
-                state[i] = (byte)(state[i] ^ 0x5A); // Hoàn tác giả lập
-            }
+            byte temp = word[0];
+            word[0] = word[1];
+            word[1] = word[2];
+            word[2] = word[3];
+            word[3] = temp;
         }
 
-        private void SimulateShiftRows(byte[] state)
+        private void SubWord(byte[] word)
         {
-            byte[] temp = new byte[16];
-            Array.Copy(state, temp, 16);
-
-            state[4] = temp[5]; state[5] = temp[6]; state[6] = temp[7]; state[7] = temp[4];
-            state[8] = temp[10]; state[9] = temp[11]; state[10] = temp[8]; state[11] = temp[9];
-            state[12] = temp[15]; state[13] = temp[12]; state[14] = temp[13]; state[15] = temp[14];
+            for (int i = 0; i < 4; i++) word[i] = SBOX[word[i]];
         }
 
-        private void SimulateInvShiftRows(byte[] state)
+        private void AddRoundKey(byte[] state, byte[] roundKey)
         {
-            byte[] temp = new byte[16];
-            Array.Copy(state, temp, 16);
-
-            state[4] = temp[7]; state[5] = temp[4]; state[6] = temp[5]; state[7] = temp[6];
-            state[8] = temp[10]; state[9] = temp[11]; state[10] = temp[8]; state[11] = temp[9];
-            state[12] = temp[13]; state[13] = temp[14]; state[14] = temp[15]; state[15] = temp[12];
+            for (int i = 0; i < 16; i++) state[i] ^= roundKey[i];
         }
 
-        private void SimulateMixColumns(byte[] state)
+        private void SubBytes(byte[] state, StringBuilder sb, int round)
         {
-            for (int i = 0; i < 16; i++)
-            {
-                state[i] = (byte)((state[i] * 2) ^ (state[i] >> 7) * 0x1B);
-            }
-        }
-
-        private void SimulateInvMixColumns(byte[] state)
-        {
-            for (int i = 0; i < 16; i++)
-            {
-                state[i] = (byte)((state[i] * 14) ^ (state[i] >> 7) * 0x1B);
-            }
-        }
-
-        private void SimulateAddRoundKey(byte[] state, int round)
-        {
-            for (int i = 0; i < 16; i++)
-            {
-                state[i] ^= (byte)(round * 0x11 + i);
-            }
-        }
-
-        private byte[] SimulateRoundKey(byte[] key, int round)
-        {
-            byte[] result = new byte[16];
-            Array.Copy(key, 0, result, 0, Math.Min(16, key.Length));
+            sb.AppendLine($"\n--- VÒNG {round}: SUBBYTES ---");
+            sb.AppendLine("Giải thích chi tiết:");
 
             for (int i = 0; i < 16; i++)
             {
-                result[i] = (byte)(result[i] ^ (round * 0x11 + i));
+                byte original = state[i];
+                byte substituted = SBOX[original];
+
+                int r = i % 4;
+                int c = i / 4;
+
+                sb.AppendLine($"- Vị trí [{r},{c}]: {original:X2} tra S-Box → {substituted:X2}");
+
+                state[i] = substituted;
             }
 
+            // In ma trận sau SubBytes
+            sb.AppendLine("=> Ma trận trạng thái sau SubBytes:");
+            for (int r = 0; r < 4; r++)
+            {
+                sb.Append("   ");
+                for (int c = 0; c < 4; c++)
+                {
+                    sb.Append($"{state[c * 4 + r]:X2} ");
+                }
+                sb.AppendLine();
+            }
+        }
+
+        private void InvSubBytes(byte[] state)
+        {
+            for (int i = 0; i < 16; i++) state[i] = INV_SBOX[state[i]];
+        }
+
+        private void ShiftRows(byte[] state)
+        {
+            byte temp = state[1];
+            state[1] = state[5]; state[5] = state[9]; state[9] = state[13]; state[13] = temp;
+
+            temp = state[2]; state[2] = state[10]; state[10] = temp;
+            temp = state[6]; state[6] = state[14]; state[14] = temp;
+
+            temp = state[15];
+            state[15] = state[11]; state[11] = state[7]; state[7] = state[3]; state[3] = temp;
+        }
+
+        private void InvShiftRows(byte[] state)
+        {
+            byte temp = state[13];
+            state[13] = state[9]; state[9] = state[5]; state[5] = state[1]; state[1] = temp;
+
+            temp = state[2]; state[2] = state[10]; state[10] = temp;
+            temp = state[6]; state[6] = state[14]; state[14] = temp;
+
+            temp = state[3];
+            state[3] = state[7]; state[7] = state[11]; state[11] = state[15]; state[15] = temp;
+        }
+
+        // Helper: xtime (nhân 2 trong GF(2^8))
+        private byte XTime(byte x)
+        {
+            byte result = (byte)((x << 1) & 0xFF);
+            if ((x & 0x80) != 0)
+                result ^= 0x1B;
             return result;
         }
 
-        private byte[] HandleKeyFlexible(byte[] inputKey, int desiredLength, Encoding encoder, StringBuilder sb)
+        // Nhân trong GF(2^8) nhưng AES chỉ cần 1,2,3 -> tối ưu cho 1/2/3
+        private byte GfMul(byte factor, byte value)
         {
-            const char PADDING_CHAR = '.';
-
-            sb.AppendLine("=== 🔑 XỬ LÝ KHÓA LINH HOẠT ===");
-            sb.AppendLine($"Key gốc (hex): {BitConverter.ToString(inputKey).Replace("-", " ")}");
-            sb.AppendLine($"Key gốc (binary): {BytesToBinaryString(inputKey)}");
-            sb.AppendLine($"Key gốc (string): '{encoder.GetString(inputKey)}'");
-            sb.AppendLine($"Độ dài key gốc: {inputKey.Length} bytes");
-            sb.AppendLine($"Yêu cầu: {desiredLength} bytes");
-            sb.AppendLine();
-
-            byte[] finalKey = new byte[desiredLength];
-            byte paddingByte = encoder.GetBytes(new char[] { PADDING_CHAR })[0];
-
-            if (inputKey.Length < desiredLength)
+            factor &= 0xFF;
+            switch (factor)
             {
-                Buffer.BlockCopy(inputKey, 0, finalKey, 0, inputKey.Length);
-                for (int i = inputKey.Length; i < desiredLength; i++)
-                {
-                    finalKey[i] = paddingByte;
-                }
-                sb.AppendLine($"🔄 Đã thêm {desiredLength - inputKey.Length} byte padding ('{PADDING_CHAR}')");
+                case 1:
+                    return value;
+                case 2:
+                    return XTime(value);
+                case 3:
+                    return (byte)(XTime(value) ^ value);
+                default:
+                    byte result = 0;
+                    byte a = value;
+                    byte b = factor;
+                    while (b != 0)
+                    {
+                        if ((b & 1) != 0) result ^= a;
+                        a = XTime(a);
+                        b >>= 1;
+                    }
+                    return result;
             }
-            else if (inputKey.Length > desiredLength)
-            {
-                Buffer.BlockCopy(inputKey, 0, finalKey, 0, desiredLength);
-                sb.AppendLine($"🔄 Đã cắt bớt từ {inputKey.Length} xuống {desiredLength} bytes");
-            }
-            else
-            {
-                finalKey = inputKey;
-                sb.AppendLine($"✅ Key có độ dài hợp lệ - không cần điều chỉnh");
-            }
-
-            sb.AppendLine();
-            sb.AppendLine($"🔹 Key cuối cùng (hex): {BitConverter.ToString(finalKey).Replace("-", " ")}");
-            sb.AppendLine($"🔹 Key cuối cùng (binary): {BytesToBinaryString(finalKey)}");
-            sb.AppendLine($"🔹 Key cuối cùng (string): \"{encoder.GetString(finalKey)}\"");
-            sb.AppendLine($"🔹 Độ dài key: {finalKey.Length} bytes ({finalKey.Length * 8} bits)");
-
-            DisplayKeyMatrix192(finalKey, sb);
-            sb.AppendLine("===========================================");
-            sb.AppendLine();
-
-            return finalKey;
         }
 
-        private void DisplayKeyMatrix192(byte[] key, StringBuilder sb)
+        private void MixColumns(byte[] state, StringBuilder sb, int round)
         {
-            sb.AppendLine();
-            sb.AppendLine("🧮 MA TRẬN KHÓA AES-192 (4x6 - Column Major):");
-            sb.AppendLine();
+            sb.AppendLine($"\n--- VÒNG {round}: MIXCOLUMNS ---");
+            sb.AppendLine("Ma trận nhân (AES):");
+            sb.AppendLine("[02 03 01 01]");
+            sb.AppendLine("[01 02 03 01]");
+            sb.AppendLine("[01 01 02 03]");
+            sb.AppendLine("[03 01 01 02]");
+            sb.AppendLine("");
 
-            sb.AppendLine("       C0    C1    C2    C3    C4    C5     |    Binary");
-            sb.AppendLine("       ---   ---   ---   ---   ---   ---    |    ------");
-
-            for (int row = 0; row < 4; row++)
+            for (int c = 0; c < 4; c++)
             {
-                sb.Append($"R{row} | ");
-                for (int col = 0; col < 6; col++)
-                {
-                    int index = row + col * 4;
-                    sb.Append($"{key[index]:X2}  ");
-                }
+                byte[] col = new byte[4];
+                for (int r = 0; r < 4; r++)
+                    col[r] = state[c * 4 + r];
 
-                sb.Append("  |  ");
-                for (int col = 0; col < 6; col++)
-                {
-                    int index = row + col * 4;
-                    sb.Append($"{Convert.ToString(key[index], 2).PadLeft(8, '0')} ");
-                }
+                sb.AppendLine($"Tính toán cho Cột {c} - Input Column: [{col[0]:X2}, {col[1]:X2}, {col[2]:X2}, {col[3]:X2}]");
+
+                byte a0 = GfMul(0x02, col[0]);
+                byte b0 = GfMul(0x03, col[1]);
+                byte c0 = GfMul(0x01, col[2]);
+                byte d0 = GfMul(0x01, col[3]);
+                byte res0 = (byte)(a0 ^ b0 ^ c0 ^ d0);
+                sb.AppendLine($" Phép tính ô [0,{c}]: (02*{col[0]:X2}) ⊕ (03*{col[1]:X2}) ⊕ (01*{col[2]:X2}) ⊕ (01*{col[3]:X2})");
+                sb.AppendLine($"  - 02*{col[0]:X2} = {a0:X2}");
+                sb.AppendLine($"  - 03*{col[1]:X2} = {b0:X2}");
+                sb.AppendLine($"  - 01*{col[2]:X2} = {c0:X2}");
+                sb.AppendLine($"  - 01*{col[3]:X2} = {d0:X2}");
+                sb.AppendLine($"  => XOR: {a0:X2} ⊕ {b0:X2} ⊕ {c0:X2} ⊕ {d0:X2} = {res0:X2}");
+                sb.AppendLine("");
+
+                byte a1 = GfMul(0x01, col[0]);
+                byte b1 = GfMul(0x02, col[1]);
+                byte c1 = GfMul(0x03, col[2]);
+                byte d1 = GfMul(0x01, col[3]);
+                byte res1 = (byte)(a1 ^ b1 ^ c1 ^ d1);
+                sb.AppendLine($" Phép tính ô [1,{c}]: (01*{col[0]:X2}) ⊕ (02*{col[1]:X2}) ⊕ (03*{col[2]:X2}) ⊕ (01*{col[3]:X2})");
+                sb.AppendLine($"  - 01*{col[0]:X2} = {a1:X2}");
+                sb.AppendLine($"  - 02*{col[1]:X2} = {b1:X2}");
+                sb.AppendLine($"  - 03*{col[2]:X2} = {c1:X2}");
+                sb.AppendLine($"  - 01*{col[3]:X2} = {d1:X2}");
+                sb.AppendLine($"  => XOR: {a1:X2} ⊕ {b1:X2} ⊕ {c1:X2} ⊕ {d1:X2} = {res1:X2}");
+                sb.AppendLine("");
+
+                byte a2 = GfMul(0x01, col[0]);
+                byte b2 = GfMul(0x01, col[1]);
+                byte c2 = GfMul(0x02, col[2]);
+                byte d2 = GfMul(0x03, col[3]);
+                byte res2 = (byte)(a2 ^ b2 ^ c2 ^ d2);
+                sb.AppendLine($" Phép tính ô [2,{c}]: (01*{col[0]:X2}) ⊕ (01*{col[1]:X2}) ⊕ (02*{col[2]:X2}) ⊕ (03*{col[3]:X2})");
+                sb.AppendLine($"  - 01*{col[0]:X2} = {a2:X2}");
+                sb.AppendLine($"  - 01*{col[1]:X2} = {b2:X2}");
+                sb.AppendLine($"  - 02*{col[2]:X2} = {c2:X2}");
+                sb.AppendLine($"  - 03*{col[3]:X2} = {d2:X2}");
+                sb.AppendLine($"  => XOR: {a2:X2} ⊕ {b2:X2} ⊕ {c2:X2} ⊕ {d2:X2} = {res2:X2}");
+                sb.AppendLine("");
+
+                byte a3 = GfMul(0x03, col[0]);
+                byte b3 = GfMul(0x01, col[1]);
+                byte c3 = GfMul(0x01, col[2]);
+                byte d3 = GfMul(0x02, col[3]);
+                byte res3 = (byte)(a3 ^ b3 ^ c3 ^ d3);
+                sb.AppendLine($" Phép tính ô [3,{c}]: (03*{col[0]:X2}) ⊕ (01*{col[1]:X2}) ⊕ (01*{col[2]:X2}) ⊕ (02*{col[3]:X2})");
+                sb.AppendLine($"  - 03*{col[0]:X2} = {a3:X2}");
+                sb.AppendLine($"  - 01*{col[1]:X2} = {b3:X2}");
+                sb.AppendLine($"  - 01*{col[2]:X2} = {c3:X2}");
+                sb.AppendLine($"  - 02*{col[3]:X2} = {d3:X2}");
+                sb.AppendLine($"  => XOR: {a3:X2} ⊕ {b3:X2} ⊕ {c3:X2} ⊕ {d3:X2} = {res3:X2}");
+                sb.AppendLine("");
+
+                state[c * 4 + 0] = res0;
+                state[c * 4 + 1] = res1;
+                state[c * 4 + 2] = res2;
+                state[c * 4 + 3] = res3;
+
+                sb.AppendLine($"Kết quả Cột {c} sau MixColumns: [{res0:X2}, {res1:X2}, {res2:X2}, {res3:X2}]");
+                sb.AppendLine(new string('-', 40));
+            }
+
+            sb.AppendLine("=> Ma trận trạng thái sau MixColumns:");
+            for (int r = 0; r < 4; r++)
+            {
+                sb.Append("   ");
+                for (int c = 0; c < 4; c++)
+                    sb.Append($"{state[c * 4 + r]:X2} ");
                 sb.AppendLine();
             }
         }
 
-        private void DisplayStateMatrix(byte[] state, string title, StringBuilder sb)
+        private void InvMixColumns(byte[] state)
         {
-            if (state.Length != 16) return;
-
-            sb.AppendLine($"   📊 {title}:");
-            sb.AppendLine("       C0    C1    C2    C3     |    Hex    |    Binary");
-            sb.AppendLine("       ---   ---   ---   ---    |    ---    |    ------");
-
-            for (int row = 0; row < 4; row++)
+            byte[] t = (byte[])state.Clone();
+            for (int i = 0; i < 16; i += 4)
             {
-                sb.Append($"   R{row} | ");
-                for (int col = 0; col < 4; col++)
-                {
-                    int index = row + col * 4;
-                    sb.Append($"{state[index]:X2}   ");
-                }
-
-                sb.Append("  |  ");
-                for (int col = 0; col < 4; col++)
-                {
-                    int index = row + col * 4;
-                    sb.Append($"{state[index]:X2} ");
-                }
-
-                sb.Append("  |  ");
-                for (int col = 0; col < 4; col++)
-                {
-                    int index = row + col * 4;
-                    sb.Append($"{Convert.ToString(state[index], 2).PadLeft(8, '0')} ");
-                }
-                sb.AppendLine();
+                state[i] = (byte)(GMul(t[i], 0x0e) ^ GMul(t[i + 1], 0x0b) ^ GMul(t[i + 2], 0x0d) ^ GMul(t[i + 3], 0x09));
+                state[i + 1] = (byte)(GMul(t[i], 0x09) ^ GMul(t[i + 1], 0x0e) ^ GMul(t[i + 2], 0x0b) ^ GMul(t[i + 3], 0x0d));
+                state[i + 2] = (byte)(GMul(t[i], 0x0d) ^ GMul(t[i + 1], 0x09) ^ GMul(t[i + 2], 0x0e) ^ GMul(t[i + 3], 0x0b));
+                state[i + 3] = (byte)(GMul(t[i], 0x0b) ^ GMul(t[i + 1], 0x0d) ^ GMul(t[i + 2], 0x09) ^ GMul(t[i + 3], 0x0e));
             }
-            sb.AppendLine();
         }
 
-        private string BytesToBinaryString(byte[] bytes)
+        private byte GMul(byte a, byte b)
         {
-            return string.Join(" ", bytes.Select(b => Convert.ToString(b, 2).PadLeft(8, '0')));
+            byte p = 0;
+            for (int i = 0; i < 8; i++)
+            {
+                if ((b & 1) != 0) p ^= a;
+                bool hi = (a & 0x80) != 0;
+                a <<= 1;
+                if (hi) a ^= 0x1B;
+                b >>= 1;
+            }
+            return p;
         }
     }
 }

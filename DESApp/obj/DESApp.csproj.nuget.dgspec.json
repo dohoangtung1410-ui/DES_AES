@@ -1,26 +1,32 @@
 {
   "format": 1,
   "restore": {
-    "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj": {}
+    "E:\\DES_AES\\DESApp\\DESApp.csproj": {}
   },
   "projects": {
-    "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj": {
+    "E:\\DES_AES\\DESApp\\DESApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj",
+        "projectUniqueName": "E:\\DES_AES\\DESApp\\DESApp.csproj",
         "projectName": "DESApp",
-        "projectPath": "E:\\CODE\\Csharp\\DESApp\\DESApp.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\CODE\\Csharp\\DESApp\\obj\\",
+        "projectPath": "E:\\DES_AES\\DESApp\\DESApp.csproj",
+        "packagesPath": "C:\\Users\\dohoa\\.nuget\\packages\\",
+        "outputPath": "E:\\DES_AES\\DESApp\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\dohoa\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net6.0-windows"
         ],
         "sources": {
-          "https://api.nuget.org/v3/index.json": {}
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {}
         },
         "frameworks": {
           "net6.0-windows7.0": {
@@ -32,7 +38,13 @@
           "warnAsError": [
             "NU1605"
           ]
-        }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net6.0-windows7.0": {
@@ -45,6 +57,10 @@
             "ModernWpfUI": {
               "target": "Package",
               "version": "[0.9.6, )"
+            },
+            "ScottPlot.WPF": {
+              "target": "Package",
+              "version": "[5.1.57, )"
             }
           },
           "imports": [
@@ -84,7 +100,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.121\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100\\RuntimeIdentifierGraph.json"
         }
       }
     }
